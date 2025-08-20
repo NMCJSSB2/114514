@@ -17,6 +17,7 @@ label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 label.TextColor3 = Color3.fromRGB(255, 255, 255)
 label.TextWrapped = true
 label.TextScaled = true
+label.RichText = true
 label.Text = "点击方块"
 label.Parent = screenGui
 
@@ -30,11 +31,27 @@ closeButton.Font = Enum.Font.SourceSansBold
 closeButton.TextScaled = true
 closeButton.Parent = screenGui
 
+local function colorName(obj)
+	if obj == workspace then
+		return "<font color='#00FF00'>" .. obj.Name .. "</font>" -- 绿色
+	elseif obj:IsA("Model") then
+		return "<font color='#FF7F7F'>" .. obj.Name .. "</font>" -- 淡红色
+	elseif obj:IsA("Folder") then
+		return "<font color='#FFFF00'>" .. obj.Name .. "</font>" -- 黄色
+	elseif obj:IsA("Tool") then
+		return "<font color='#FFA500'>" .. obj.Name .. "</font>" -- 橙色
+	elseif obj:IsA("BasePart") then
+		return "<font color='#FFFFFF'>" .. obj.Name .. "</font>" -- 白色
+	else
+		return "<font color='#FFFFFF'>" .. obj.Name .. "</font>" -- 白色
+	end
+end
+
 local function getFullPath(obj)
 	local path = {}
 	local current = obj
 	while current and current ~= game do
-		table.insert(path, 1, current.Name)
+		table.insert(path, 1, colorName(current))
 		current = current.Parent
 	end
 	return table.concat(path, " > ")
@@ -62,7 +79,7 @@ label.InputBegan:Connect(function(input)
 	if not scriptEnabled then return end
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		if label.Text ~= "" then
-			setclipboard(label.Text)
+			setclipboard(label.Text:gsub("<[^>]+>", ""))
 		end
 	end
 end)
@@ -72,7 +89,7 @@ mouse.Button1Down:Connect(function()
 	if mouse.Target then
 		local part = mouse.Target
 		local fullPath = getFullPath(part)
-		label.Text = "名称: " .. part.Name .. "\n路径: " .. fullPath
+		label.Text = "名称: " .. colorName(part) .. "\n路径: " .. fullPath
 
 		if currentHighlight then
 			currentHighlight:Destroy()
@@ -89,7 +106,7 @@ mouse.Button1Down:Connect(function()
 			if part.Transparency == 1 then
 				lastInvisiblePart = part
 				lastTransparency = part.Transparency
-				part.Transparency = 0.9
+				part.Transparency = 0.6
 			end
 		end
 
