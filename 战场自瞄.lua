@@ -15,15 +15,21 @@ local DEFAULT_CONFIG = {
 
 local State = {
     LastNotification = 0,
-    LockedTarget = nil
+    LockedTarget = nil,
+    IsDragging = false,
+    DragStartPosition = nil,
+    ButtonStartPosition = nil
 }
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local Camera = workspace.CurrentCamera
 
+-- 创建UI时设置ResetOnSpawn为false，这样玩家重生时UI不会消失
 local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AimLockUI"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false  -- 关键设置：玩家重生时不重置UI
 
 local LockButton = Instance.new("ImageButton")
 LockButton.Parent = ScreenGui
@@ -32,7 +38,7 @@ LockButton.Position = UDim2.new(0, 20, 0.5, -30)
 LockButton.BackgroundTransparency = 1
 LockButton.BorderSizePixel = 0
 LockButton.AutoButtonColor = false
-LockButton.Image = "rbxassetid://" .. 136690890096213
+LockButton.Image = "rbxassetid://136690890096213"
 local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 12)
 UICorner.Parent = LockButton
@@ -98,24 +104,46 @@ end
 
 LockButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        LockButton.Image = "rbxassetid://" .. 129639557986886
-        local dragStart = input.Position
+        LockButton.Image = "rbxassetid://129639557986886"
+        
+        local dragStart = Vector2.new(input.Position.X, input.Position.Y)
         local startPos = LockButton.Position
-        local dragging = false
+        State.IsDragging = false
+        State.DragStartPosition = dragStart
+        State.ButtonStartPosition = startPos
+        
         local connection
         connection = UserInputService.InputChanged:Connect(function(inputChanged)
             if inputChanged.UserInputType == Enum.UserInputType.MouseMovement or inputChanged.UserInputType == Enum.UserInputType.Touch then
-                local delta = inputChanged.Position - dragStart
-                if delta.Magnitude > 5 then
-                    dragging = true
+                if inputChanged.UserInputType == Enum.UserInputType.Touch and inputChanged ~= input then
+                    return
                 end
-                LockButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+                
+                local currentPos = Vector2.new(inputChanged.Position.X, inputChanged.Position.Y)
+                local delta = currentPos - State.DragStartPosition
+                
+                if not State.IsDragging and delta.Magnitude > 5 then
+                    State.IsDragging = true
+                end
+                
+                if State.IsDragging then
+                    local newX = State.ButtonStartPosition.X.Offset + delta.X
+                    local newY = State.ButtonStartPosition.Y.Offset + delta.Y
+                    
+                    LockButton.Position = UDim2.new(
+                        State.ButtonStartPosition.X.Scale, 
+                        newX,
+                        State.ButtonStartPosition.Y.Scale, 
+                        newY
+                    )
+                end
             end
         end)
+        
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 connection:Disconnect()
-                if not dragging then
+                if not State.IsDragging then
                     DEFAULT_CONFIG.Active = not DEFAULT_CONFIG.Active
                     if DEFAULT_CONFIG.Active then
                         State.LockedTarget = FindNearestPlayer()
@@ -127,6 +155,8 @@ LockButton.InputBegan:Connect(function(input)
                         SendNotification(false)
                     end
                 end
+                LockButton.Image = "rbxassetid://136690890096213"
+                State.IsDragging = false
             end
         end)
     end
@@ -134,7 +164,7 @@ end)
 
 LockButton.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        LockButton.Image = "rbxassetid://" .. 136690890096213
+        LockButton.Image = "rbxassetid://136690890096213"
     end
 end)
 
