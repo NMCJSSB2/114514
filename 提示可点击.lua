@@ -32,11 +32,11 @@ local function createHighlight(part)
 	label.Size = UDim2.new(1,0,1,0)
 	label.BackgroundTransparency = 1
 	label.Text = "可点击"
-	label.TextColor3 = HIGHLIGHT_COLOR -- 主体蓝色
-	label.TextStrokeColor3 = TEXT_COLOR -- 描边黑色
-	label.TextStrokeTransparency = 0 -- 描边不透明
+	label.TextColor3 = HIGHLIGHT_COLOR
+	label.TextStrokeColor3 = TEXT_COLOR
+	label.TextStrokeTransparency = 0
 	label.TextScaled = true
-	label.TextSize = 14 -- 字体稍小
+	label.TextSize = 14
 	label.Font = Enum.Font.SourceSansBold
 	label.Parent = billboard
 	
