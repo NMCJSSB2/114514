@@ -2,12 +2,12 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
-local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local OriginalFOV = Camera.FieldOfView
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
-local OriginalWalkSpeed = Humanoid.WalkSpeed
 
 local SHADOW_SETTINGS = {
     Enabled = false,
@@ -20,7 +20,6 @@ local SHADOW_SETTINGS = {
 
 local shadows = {}
 local lastSpawnTime = 0
-local lastPosition = Character:GetPivot().Position
 local globalHighlights = {}
 local timerActive = false
 local buttonCooldown = false
@@ -49,7 +48,6 @@ ToggleButton.BorderSizePixel = 0
 ToggleButton.AutoButtonColor = false
 ToggleButton.Image = "rbxassetid://136771252711259"
 
--- Timer Label
 local TimerLabel = Instance.new("TextLabel")
 TimerLabel.Parent = ScreenGui
 TimerLabel.AnchorPoint = Vector2.new(0.5,0)
@@ -80,9 +78,10 @@ local function updateButtonIcon()
     end
 end
 
--- Tween ColorCorrection
-local function tweenScreenEffect(targetContrast,targetTint)
-    TweenService:Create(shadowEffect,TweenInfo.new(0.5),{Contrast=targetContrast,TintColor=targetTint}):Play()
+-- Tween ColorCorrection and FOV
+local function tweenScreenEffectAndFOV(targetContrast, targetTint, targetFOV)
+    TweenService:Create(shadowEffect, TweenInfo.new(0.5), {Contrast = targetContrast, TintColor = targetTint}):Play()
+    TweenService:Create(Camera, TweenInfo.new(0.5), {FieldOfView = targetFOV}):Play()
 end
 
 -- Clear Shadows
@@ -96,7 +95,6 @@ local function clearShadows()
     end
     globalHighlights = {}
 end
-
 -- Shadow Functions
 local function clonePartAppearance(originalPart, shadowPart)
     shadowPart.Transparency = SHADOW_SETTINGS.InitialTransparency
@@ -121,10 +119,12 @@ local function clonePartAppearance(originalPart, shadowPart)
         shadowPart.VertexColor = Vector3.new(1,1,1)  
     end
 end
+
 local function createCharacterShadowModel()
     if not Character then return nil end
     local shadowModel = Instance.new("Model")
     shadowModel.Name = "PlayerShadow"
+
     for _, originalPart in ipairs(Character:GetDescendants()) do  
         if originalPart:IsA("BasePart") and originalPart.Transparency < 0.9 then  
             local shadowPart = Instance.new("Part")  
@@ -132,9 +132,11 @@ local function createCharacterShadowModel()
             shadowPart.Size = originalPart.Size * SHADOW_SETTINGS.SizeMultiplier  
             shadowPart.CFrame = originalPart.CFrame  
             clonePartAppearance(originalPart, shadowPart)  
-            shadowPart.Parent = shadowModel  
+            shadowPart.Parent = shadowModel
+            shadowPart.CastShadow = false
         end  
     end  
+
     for _, accessory in ipairs(Character:GetChildren()) do  
         if accessory:IsA("Accessory") and accessory:FindFirstChild("Handle") then  
             local shadowPart = Instance.new("Part")  
@@ -142,18 +144,22 @@ local function createCharacterShadowModel()
             shadowPart.Size = accessory.Handle.Size * SHADOW_SETTINGS.SizeMultiplier  
             shadowPart.CFrame = accessory.Handle.CFrame  
             clonePartAppearance(accessory.Handle, shadowPart)  
-            shadowPart.Parent = shadowModel  
+            shadowPart.Parent = shadowModel
+            shadowPart.CastShadow = false
         end  
     end  
+
     local highlight = Instance.new("Highlight")  
     highlight.Name = "ShadowHighlight"  
-    highlight.FillColor = Color3.fromRGB(0,255,255)  
-    highlight.OutlineColor = Color3.fromRGB(0,255,255)  
+    highlight.FillColor = Color3.fromRGB(0,255,0)  
+    highlight.OutlineColor = Color3.fromRGB(0,0,255)  
     highlight.FillTransparency = 0.5  
     highlight.OutlineTransparency = 0.7  
     highlight.Adornee = shadowModel  
+    highlight.DepthMode = Enum.HighlightDepthMode.Occluded
     highlight.Parent = shadowModel  
     table.insert(globalHighlights, highlight)
+
     shadowModel.Parent = workspace  
     return shadowModel
 end
@@ -162,13 +168,12 @@ local function createCharacterShadow()
     if not SHADOW_SETTINGS.Enabled or not Character then return end
     local currentTime = tick()
     if currentTime - lastSpawnTime < SHADOW_SETTINGS.SpawnInterval then return end
-    local currentPosition = Character:GetPivot().Position
-    if (currentPosition - lastPosition).Magnitude < 0.1 then return end
     lastSpawnTime = currentTime
-    lastPosition = currentPosition
-    local shadowModel = createCharacterShadowModel()
-    if shadowModel then
-        table.insert(shadows, {Model = shadowModel, CreatedTime = currentTime})
+    if Humanoid.MoveDirection.Magnitude > 0 then
+        local shadowModel = createCharacterShadowModel()
+        if shadowModel then
+            table.insert(shadows, {Model = shadowModel, CreatedTime = currentTime})
+        end
     end
 end
 
@@ -194,32 +199,27 @@ local function updateShadows()
     end  
     for i = #indicesToRemove,1,-1 do  
         local shadowData = shadows[indicesToRemove[i]]  
-        if shadowData.Model and shadowData.Model.Parent then  
-            shadowData.Model:Destroy()  
-        end  
-        table.remove(shadows, indicesToRemove[i])  
+        if shadowData.Model and shadowData.Model.Parent then
+            shadowData.Model:Destroy()
+        end
+        table.remove(shadows, indicesToRemove[i])
     end
 end
 
-local function onMovementUpdate()
-    if SHADOW_SETTINGS.Enabled and Character and Humanoid and Humanoid.MoveDirection.Magnitude > 0 then
-        createCharacterShadow()
-    end
+RunService.RenderStepped:Connect(function()
+    if SHADOW_SETTINGS.Enabled then createCharacterShadow() end
     updateShadows()
-end
+end)
 
-local function onCharacterAdded(newCharacter)
+LocalPlayer.CharacterAdded:Connect(function(newCharacter)
     Character = newCharacter
     Humanoid = newCharacter:WaitForChild("Humanoid")
-    lastPosition = Character:GetPivot().Position
     clearShadows()
-end
+end)
 
-LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
-RunService.RenderStepped:Connect(onMovementUpdate)
 updateButtonIcon()
 
--- Dragging
+-- Dragging and toggle logic
 local dragging = false
 local dragStartPos
 local buttonStartPos
@@ -240,65 +240,48 @@ end)
 
 ToggleButton.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        if holdStartTime and not canDrag then
-            if tick() - holdStartTime >= holdTime then
-                canDrag = true
-                dragging = true
-            end
+        if holdStartTime and not canDrag and tick() - holdStartTime >= holdTime then
+            canDrag = true
+            dragging = true
         end
         if dragging then
             local delta = input.Position - dragStartPos
-            ToggleButton.Position = UDim2.new(
-                buttonStartPos.X.Scale,
-                buttonStartPos.X.Offset + delta.X,
-                buttonStartPos.Y.Scale,
-                buttonStartPos.Y.Offset + delta.Y
-            )
+            ToggleButton.Position = UDim2.new(buttonStartPos.X.Scale, buttonStartPos.X.Offset + delta.X, buttonStartPos.Y.Scale, buttonStartPos.Y.Offset + delta.Y)
         end
     end
 end)
 
--- Toggle + Timer
 ToggleButton.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         if not canDrag and not shortPressTriggered and not buttonCooldown then
             buttonCooldown = true
             task.delay(1,function() buttonCooldown = false end)
-
             if SHADOW_SETTINGS.Enabled then
-                -- Turn off
                 SHADOW_SETTINGS.Enabled = false
-                Humanoid.WalkSpeed = OriginalWalkSpeed
-                tweenScreenEffect(0, Color3.new(1,1,1))
+                tweenScreenEffectAndFOV(0, Color3.new(1,1,1), OriginalFOV)
                 clearShadows()
                 TimerLabel.Visible = false
                 timerActive = false
             else
-                -- Turn on
                 SHADOW_SETTINGS.Enabled = true
-                Humanoid.WalkSpeed = 30
-                tweenScreenEffect(-2, Color3.fromRGB(0,255,0))
+                tweenScreenEffectAndFOV(-2, Color3.fromRGB(0,255,0), 50)
                 playSound()
                 timerActive = true
                 TimerLabel.Visible = true
                 local countdown = 10
                 local startColor = Color3.fromRGB(0,255,255)
                 local endColor = Color3.fromRGB(128,0,128)
-
                 spawn(function()
                     while timerActive and countdown > 0 do
                         TimerLabel.Text = string.format("%.2f", countdown)
-                        local alpha = (10 - countdown)/10
-                        TimerLabel.TextColor3 = startColor:Lerp(endColor, alpha)
+                        TimerLabel.TextColor3 = startColor:Lerp(endColor,(10-countdown)/10)
                         task.wait(0.05)
                         countdown = countdown - 0.05
                     end
                     if timerActive then
-                        -- Auto turn off
                         SHADOW_SETTINGS.Enabled = false
                         updateButtonIcon()
-                        Humanoid.WalkSpeed = OriginalWalkSpeed
-                        tweenScreenEffect(0, Color3.new(1,1,1))
+                        tweenScreenEffectAndFOV(0, Color3.new(1,1,1), OriginalFOV)
                         clearShadows()
                         TimerLabel.Visible = false
                         timerActive = false
@@ -316,13 +299,11 @@ end)
 
 -- Shadow color cycling
 local gradientColors = {
-    Color3.fromRGB(0,255,255),
+    Color3.fromRGB(0,255,0),
     Color3.fromRGB(0,0,255),
     Color3.fromRGB(128,0,128),
     Color3.fromRGB(255,0,0),
-    Color3.fromRGB(255,165,0),
-    Color3.fromRGB(255,255,0),
-    Color3.fromRGB(0,255,255)
+    Color3.fromRGB(0,255,0)
 }
 
 RunService.RenderStepped:Connect(function()
