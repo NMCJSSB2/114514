@@ -48,7 +48,6 @@ MarkerButton.InputBegan:Connect(function(input)
         dragStartPosition = Vector2.new(input.Position.X, input.Position.Y)
         buttonStartPosition = MarkerButton.Position
         isDragging = false
-
         local connection
         connection = UserInputService.InputChanged:Connect(function(inputChanged)
             if inputChanged.UserInputType == Enum.UserInputType.MouseMovement or inputChanged.UserInputType == Enum.UserInputType.Touch then
@@ -67,12 +66,9 @@ MarkerButton.InputBegan:Connect(function(input)
                 end
             end
         end)
-
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                if connection then
-                    connection:Disconnect()
-                end
+                if connection then connection:Disconnect() end
                 MarkerButton.Image = "rbxassetid://108171505803150"
                 isDragging = false
             end
@@ -93,13 +89,11 @@ local function CreateMarkerIcon(player)
             billboard.MaxDistance = 100
             billboard.StudsOffset = Vector3.new(0, 3, 0)
             billboard.Parent = head
-
             local image = Instance.new("ImageLabel")
             image.Size = UDim2.new(1,0,1,0)
             image.BackgroundTransparency = 1
             image.Image = "rbxassetid://116955222297518"
             image.Parent = billboard
-
             markerIcons[player] = billboard
         end
     end
@@ -123,20 +117,17 @@ local function CreateFireEffect(player)
                 outer.Size = 10
                 outer.Heat = 10
                 outer.Parent = part
-
                 local inner = Instance.new("Fire")
                 inner.Color = Color3.fromRGB(50,0,80)
                 inner.SecondaryColor = Color3.fromRGB(50,0,80)
                 inner.Size = 6
                 inner.Heat = 10
                 inner.Parent = part
-
                 table.insert(fires, outer)
                 table.insert(fires, inner)
             end
         end
         fireEffects[player] = fires
-
         local head = player.Character:FindFirstChild("Head")
         if head then
             local sound = Instance.new("Sound")
@@ -144,11 +135,21 @@ local function CreateFireEffect(player)
             sound.Volume = 1
             sound.Parent = head
             sound:Play()
-            sound.Ended:Connect(function()
-                sound:Destroy()
-            end)
+            sound.Ended:Connect(function() sound:Destroy() end)
         end
     end
+end
+
+local function PlaySelfAnimation()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local humanoid = char:WaitForChild("Humanoid")
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://29517689"
+    local track = humanoid:LoadAnimation(anim)
+    track.Priority = Enum.AnimationPriority.Action
+    track.Looped = false
+    track:Play()
+    track.Stopped:Connect(function() track:Destroy() end)
 end
 
 UserInputService.InputBegan:Connect(function(input, processed)
@@ -162,11 +163,9 @@ UserInputService.InputBegan:Connect(function(input, processed)
             local mouse = LocalPlayer:GetMouse()
             unitRay = Camera:ScreenPointToRay(mouse.X, mouse.Y)
         end
-
         local raycastParams = RaycastParams.new()
         raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
         raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-
         local result = workspace:Raycast(unitRay.Origin, unitRay.Direction * 1000, raycastParams)
         if result and result.Instance then
             local hitPart = result.Instance
@@ -184,37 +183,25 @@ end)
 
 local function PlayAmaterasuEffect()
     if isPlayingTitle then
-        TweenService:Create(TitleLabel, TweenInfo.new(0), {
-            TextTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 12)
-        }):Play()
+        TweenService:Create(TitleLabel, TweenInfo.new(0), {TextTransparency = 1, Size = UDim2.new(1,0,0,12)}):Play()
     end
     isPlayingTitle = true
-
     TitleLabel.TextTransparency = 1
-    TitleLabel.Size = UDim2.new(1, 0, 0, 12)
-
-    local tweenIn = TweenService:Create(TitleLabel, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        TextTransparency = 0,
-        Size = UDim2.new(1, 0, 0, 42)
-    })
+    TitleLabel.Size = UDim2.new(1,0,0,12)
+    local tweenIn = TweenService:Create(TitleLabel, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0, Size = UDim2.new(1,0,0,42)})
     tweenIn:Play()
     tweenIn.Completed:Wait()
-
     task.wait(1)
-
-    local tweenOut = TweenService:Create(TitleLabel, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-        TextTransparency = 1
-    })
+    local tweenOut = TweenService:Create(TitleLabel, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
     tweenOut:Play()
     tweenOut.Completed:Wait()
-
     isPlayingTitle = false
 end
 
 MarkerButton.MouseButton1Click:Connect(function()
     if currentMarkedPlayer then
         CreateFireEffect(currentMarkedPlayer)
+        PlaySelfAnimation()
         PlayAmaterasuEffect()
     end
 end)
@@ -222,14 +209,10 @@ end)
 Players.PlayerRemoving:Connect(function(player)
     RemoveMarkerIcon(player)
     if fireEffects[player] then
-        for _, f in ipairs(fireEffects[player]) do
-            f:Destroy()
-        end
+        for _, f in ipairs(fireEffects[player]) do f:Destroy() end
         fireEffects[player] = nil
     end
-    if currentMarkedPlayer == player then
-        currentMarkedPlayer = nil
-    end
+    if currentMarkedPlayer == player then currentMarkedPlayer = nil end
 end)
 
 LocalPlayer.CharacterAdded:Connect(function()
