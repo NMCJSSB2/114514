@@ -1,117 +1,102 @@
+-- 精简版 Shift Lock（可拖动、右上角、多点安全）
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local Player = Players.LocalPlayer
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+local MaxLength = 900000
+local ThirdPersonOffset = CFrame.new(1.7, 0, 0)
+local FirstPersonOffset = CFrame.new(0, 0, 0)
+local Active
 
-local Button = Instance.new("ImageButton")
-Button.Size = UDim2.new(0, 60, 0, 60)
-Button.Position = UDim2.new(0.9, 0, 0.1, 0)
-Button.AnchorPoint = Vector2.new(0.5, 0.5)
-Button.BackgroundTransparency = 1
-Button.Image = "rbxassetid://95118959634082"
-Button.ImageColor3 = Color3.fromRGB(255,255,255)
-Button.Parent = ScreenGui
+-- GUI
+local ShiftLockScreenGui = Instance.new("ScreenGui")
+ShiftLockScreenGui.Name = "Shiftlock"
+ShiftLockScreenGui.Parent = game:GetService("CoreGui")
+ShiftLockScreenGui.ResetOnSpawn = false
 
+local ShiftLockButton = Instance.new("ImageButton")
+ShiftLockButton.Parent = ShiftLockScreenGui
+ShiftLockButton.BackgroundTransparency = 1
+ShiftLockButton.Position = UDim2.new(0.9, -60, 0.05, 0) -- 初始右上角
+ShiftLockButton.Size = UDim2.fromOffset(60, 60)
+ShiftLockButton.Image = "rbxassetid://111590748521247"
+ShiftLockButton.ZIndex = 10
+
+-- 拖动变量
 local dragging = false
-local dragReady = false
-local dragStart, startPos
-local longPressTime = 1
+local dragInput, dragStart, startPos
 
-local function triggerLongPress()
-	task.wait(longPressTime)
-	if dragging then
-		dragReady = true
-		task.spawn(function()
-			Button.ImageColor3 = Color3.fromRGB(180,180,180)
-			task.wait(0.1)
-			Button.ImageColor3 = Color3.fromRGB(255,255,255)
-		end)
-	end
+-- 判断是否第一人称
+local function isFirstPerson()
+    local cam = workspace.CurrentCamera
+    return cam.CameraSubject and cam.CameraSubject:IsA("Humanoid") 
+        and cam.CameraType == Enum.CameraType.Custom 
+        and (cam.CFrame.Position - cam.Focus.Position).Magnitude < 1
 end
 
-Button.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = Button.Position
-		dragReady = false
-		Button.ImageColor3 = Color3.fromRGB(180,180,180)
-		Button.Size = UDim2.new(0, 55, 0, 55)
-		task.spawn(triggerLongPress)
-	end
+-- 鼠标/触摸按下开始拖动
+ShiftLockButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = ShiftLockButton.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
 end)
 
-Button.InputChanged:Connect(function(input)
-	if dragging and dragReady and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		Button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
+-- 拖动更新
+ShiftLockButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		if dragging then
-			dragging = false
-			dragReady = false
-			Button.ImageColor3 = Color3.fromRGB(255,255,255)
-			Button.Size = UDim2.new(0, 60, 0, 60)
-		end
-	end
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input == dragInput) then
+        local delta = input.Position - dragStart
+        ShiftLockButton.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
 end)
 
-local shiftLockEnabled = false
-local targetOffset = Vector3.new(0,0,0)
-local cameraOffsetSpeed = 0.1
+-- Shift Lock 点击切换
+ShiftLockButton.MouseButton1Click:Connect(function()
+    if dragging then return end -- 拖动时不触发点击
 
-local function enableShiftLock()
-	shiftLockEnabled = true
-	targetOffset = Vector3.new(2, 1, 0)
-	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-end
-
-local function disableShiftLock()
-	shiftLockEnabled = false
-	targetOffset = Vector3.new(0,0,0)
-	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-end
-
-Button.MouseButton1Click:Connect(function()
-	if shiftLockEnabled then
-		disableShiftLock()
-	else
-		enableShiftLock()
-	end
-end)
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.KeyCode == Enum.KeyCode.LeftShift then
-		enableShiftLock()
-	end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-	if input.KeyCode == Enum.KeyCode.LeftShift then
-		disableShiftLock()
-	end
-end)
-
-RunService.RenderStepped:Connect(function()
-	local character = LocalPlayer.Character
-	if character and character:FindFirstChild("Humanoid") and character:FindFirstChild("HumanoidRootPart") then
-		local humanoid = character.Humanoid
-		local rootPart = character.HumanoidRootPart
-		humanoid.CameraOffset = humanoid.CameraOffset:Lerp(targetOffset, cameraOffsetSpeed)
-		if shiftLockEnabled then
-			local lookVector = Vector3.new(Camera.CFrame.LookVector.X, 0, Camera.CFrame.LookVector.Z)
-			if lookVector.Magnitude > 0 then
-				rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + lookVector.Unit)
-			end
-		end
-	end
+    if not Active then
+        Active = RunService.RenderStepped:Connect(function()
+            if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Humanoid") then
+                local humanoid = Player.Character.Humanoid
+                humanoid.AutoRotate = false
+                local root = Player.Character.HumanoidRootPart
+                local camLook = workspace.CurrentCamera.CFrame.LookVector
+                root.CFrame = CFrame.new(root.Position, Vector3.new(camLook.X * MaxLength, root.Position.Y, camLook.Z * MaxLength))
+                
+                if isFirstPerson() then
+                    workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame * FirstPersonOffset
+                else
+                    workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame * ThirdPersonOffset
+                end
+            end
+        end)
+    else
+        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+            Player.Character.Humanoid.AutoRotate = true
+        end
+        workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame * ThirdPersonOffset
+        pcall(function()
+            Active:Disconnect()
+            Active = nil
+        end)
+    end
 end)
