@@ -1,4 +1,3 @@
--- 精简版 Shift Lock（可拖动、右上角、多点安全）
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -18,7 +17,7 @@ ShiftLockScreenGui.ResetOnSpawn = false
 local ShiftLockButton = Instance.new("ImageButton")
 ShiftLockButton.Parent = ShiftLockScreenGui
 ShiftLockButton.BackgroundTransparency = 1
-ShiftLockButton.Position = UDim2.new(0.9, -60, 0.05, 0) -- 初始右上角
+ShiftLockButton.Position = UDim2.new(0.9, -60, 0.05, 0)
 ShiftLockButton.Size = UDim2.fromOffset(60, 60)
 ShiftLockButton.Image = "rbxassetid://111590748521247"
 ShiftLockButton.ZIndex = 10
@@ -27,7 +26,6 @@ ShiftLockButton.ZIndex = 10
 local dragging = false
 local dragInput, dragStart, startPos
 
--- 判断是否第一人称
 local function isFirstPerson()
     local cam = workspace.CurrentCamera
     return cam.CameraSubject and cam.CameraSubject:IsA("Humanoid") 
@@ -35,7 +33,6 @@ local function isFirstPerson()
         and (cam.CFrame.Position - cam.Focus.Position).Magnitude < 1
 end
 
--- 鼠标/触摸按下开始拖动
 ShiftLockButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
@@ -69,9 +66,9 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Shift Lock 点击切换
+-- 点击切换
 ShiftLockButton.MouseButton1Click:Connect(function()
-    if dragging then return end -- 拖动时不触发点击
+    if dragging then return end
 
     if not Active then
         Active = RunService.RenderStepped:Connect(function()
