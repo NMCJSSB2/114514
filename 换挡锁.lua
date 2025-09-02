@@ -4,11 +4,10 @@ local UserInputService = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
 
 local MaxLength = 900000
-local ThirdPersonOffset = CFrame.new(1.7, 0, 0)
+local ThirdPersonOffset = CFrame.new(1.7, 0.5, 0)
 local FirstPersonOffset = CFrame.new(0, 0, 0)
 local Active
 
--- GUI
 local ShiftLockScreenGui = Instance.new("ScreenGui")
 ShiftLockScreenGui.Name = "Shiftlock"
 ShiftLockScreenGui.Parent = game:GetService("CoreGui")
@@ -22,7 +21,6 @@ ShiftLockButton.Size = UDim2.fromOffset(60, 60)
 ShiftLockButton.Image = "rbxassetid://111590748521247"
 ShiftLockButton.ZIndex = 10
 
--- 拖动变量
 local dragging = false
 local dragInput, dragStart, startPos
 
@@ -47,7 +45,6 @@ ShiftLockButton.InputBegan:Connect(function(input)
     end
 end)
 
--- 拖动更新
 ShiftLockButton.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
@@ -66,7 +63,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- 点击切换
 ShiftLockButton.MouseButton1Click:Connect(function()
     if dragging then return end
 
