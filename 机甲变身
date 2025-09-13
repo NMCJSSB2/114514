@@ -1,0 +1,198 @@
+-- LocalScript 放 StarterPlayerScripts
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local hrp = character:WaitForChild("HumanoidRootPart")
+local camera = workspace.CurrentCamera
+
+local MaxLength = 900000
+local ShiftLockActive
+local ForwardVelocity
+local AutoMoveConnection
+local AUTO_MOVE_SPEED = 30
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local button = Instance.new("ImageButton")
+button.Size = UDim2.new(0, 80, 0, 80)
+button.Position = UDim2.new(0.9, -40, 0.8, -40)
+button.BackgroundTransparency = 1
+button.Image = "rbxassetid://100894356455484"
+button.Parent = screenGui
+
+local sprintEnabled = false
+local originalAnimations = {}
+
+local function startAutoMove()
+    if AutoMoveConnection then return end
+    AutoMoveConnection = RunService.Heartbeat:Connect(function(deltaTime)
+        if character and humanoid and hrp then
+            local camLook = camera.CFrame.LookVector
+            local moveDirection = Vector3.new(camLook.X, 0, camLook.Z).Unit
+            local moveDistance = AUTO_MOVE_SPEED * deltaTime
+            hrp.CFrame = hrp.CFrame + (moveDirection * moveDistance)
+        end
+    end)
+end
+
+local function stopAutoMove()
+    if AutoMoveConnection then
+        AutoMoveConnection:Disconnect()
+        AutoMoveConnection = nil
+    end
+end
+
+local function saveOriginalAnimations()
+    if character:FindFirstChild("Animate") then
+        local animate = character.Animate
+        for _, animType in ipairs({"idle","walk","run","jump","fall","sit","climb","swim","swimidle"}) do
+            local animFolder = animate:FindFirstChild(animType)
+            if animFolder then
+                for _, anim in ipairs(animFolder:GetChildren()) do
+                    if anim:IsA("Animation") then
+                        originalAnimations[anim] = anim.AnimationId
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function restoreAnimations()
+    for anim, id in pairs(originalAnimations) do
+        anim.AnimationId = id
+    end
+end
+
+local function replaceAnimations(newId)
+    if character:FindFirstChild("Animate") then
+        local animate = character.Animate
+        for _, animType in ipairs({"idle","walk","run","jump","fall","sit","climb","swim","swimidle"}) do
+            local animFolder = animate:FindFirstChild(animType)
+            if animFolder then
+                for _, anim in ipairs(animFolder:GetChildren()) do
+                    if anim:IsA("Animation") then
+                        anim.AnimationId = newId
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function playSound()
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://81781605575093"
+    sound.Volume = 2
+    sound.Parent = hrp
+    sound:Play()
+    Debris:AddItem(sound,3)
+end
+
+local function dash(distance, fovTarget, backward)
+    local originalFOV = camera.FieldOfView
+    local tweenUp = TweenService:Create(camera, TweenInfo.new(0.25), {FieldOfView = fovTarget})
+    tweenUp:Play()
+    if humanoid and humanoid.FloorMaterial ~= Enum.Material.Air then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+    local direction = backward and -camera.CFrame.LookVector or camera.CFrame.LookVector
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(1e5,1e5,1e5)
+    bv.Velocity = direction * distance
+    bv.Parent = hrp
+    Debris:AddItem(bv,0.25)
+    delay(0.25, function()
+        local tweenDown = TweenService:Create(camera, TweenInfo.new(0.25), {FieldOfView = originalFOV})
+        tweenDown:Play()
+    end)
+end
+
+local function enableShiftLock()
+    if ShiftLockActive then return end
+    ShiftLockActive = RunService.RenderStepped:Connect(function()
+        if character and humanoid and hrp then
+            humanoid.AutoRotate = false
+            local camLook = camera.CFrame.LookVector
+            hrp.CFrame = CFrame.new(hrp.Position, hrp.Position + Vector3.new(camLook.X, 0, camLook.Z))
+            if not ForwardVelocity then
+                ForwardVelocity = Instance.new("BodyVelocity")
+                ForwardVelocity.MaxForce = Vector3.new(1e5,0,1e5)
+                ForwardVelocity.Velocity = Vector3.new(camLook.X, 0, camLook.Z) * 30
+                ForwardVelocity.Parent = hrp
+            else
+                ForwardVelocity.Velocity = Vector3.new(camLook.X, 0, camLook.Z) * 30
+            end
+        end
+    end)
+end
+
+local function disableShiftLock()
+    if character and humanoid then
+        humanoid.AutoRotate = true
+    end
+    if ForwardVelocity then
+        ForwardVelocity:Destroy()
+        ForwardVelocity = nil
+    end
+    if ShiftLockActive then
+        ShiftLockActive:Disconnect()
+        ShiftLockActive = nil
+    end
+end
+
+saveOriginalAnimations()
+
+button.MouseButton1Click:Connect(function()
+    if not sprintEnabled then
+        sprintEnabled = true
+        button.Image = "rbxassetid://123263193141508"
+        replaceAnimations("rbxassetid://72382226286301")
+        playSound()
+        dash(60, 90, false)
+        enableShiftLock()
+        startAutoMove()
+    else
+        sprintEnabled = false
+        button.Image = "rbxassetid://100894356455484"
+        restoreAnimations()
+        playSound()
+        dash(30, 50, true)
+        disableShiftLock()
+        stopAutoMove()
+    end
+end)
+
+player.CharacterAdded:Connect(function(char)
+    character = char
+    humanoid = character:WaitForChild("Humanoid")
+    hrp = character:WaitForChild("HumanoidRootPart")
+    saveOriginalAnimations()
+    if sprintEnabled then
+        task.wait(0.5)
+        enableShiftLock()
+        startAutoMove()
+    end
+end)
+
+player.CharacterRemoving:Connect(function()
+    if sprintEnabled then
+        stopAutoMove()
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(leavingPlayer)
+    if leavingPlayer == player then
+        if sprintEnabled then
+            stopAutoMove()
+        end
+    end
+end)
