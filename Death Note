@@ -1,0 +1,87 @@
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local guiRecords = {}
+
+local function HasVisibleSurfaceGui(part)
+	for _, child in pairs(part:GetChildren()) do
+		if child:IsA("SurfaceGui") and child.Enabled == true then
+			return true
+		end
+	end
+	return false
+end
+
+local function CreateBillboard(part)
+	local billboard = Instance.new("BillboardGui")
+	billboard.Adornee = part
+	billboard.Size = UDim2.new(0, 100, 0, 40)
+	billboard.AlwaysOnTop = true
+	billboard.Name = "IdHighlighter"
+
+	local textLabel = Instance.new("TextLabel")
+	textLabel.Size = UDim2.new(1, 0, 1, 0)
+	textLabel.BackgroundTransparency = 1
+	textLabel.Text = "ID"
+	textLabel.Font = Enum.Font.SourceSansBold
+	textLabel.TextSize = 24
+	textLabel.TextColor3 = Color3.fromRGB(0, 150, 255)
+	textLabel.TextStrokeTransparency = 0
+	textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	textLabel.Parent = billboard
+
+	billboard.Parent = part
+	return billboard
+end
+
+local function UpdateBillboard(part)
+	local hasGui = HasVisibleSurfaceGui(part)
+	local record = guiRecords[part]
+
+	if hasGui and not record then
+		guiRecords[part] = CreateBillboard(part)
+		for _, desc in pairs(part:GetDescendants()) do
+			if desc:IsA("ProximityPrompt") then
+				desc.MaxActivationDistance = 20
+				desc.RequiresLineOfSight = false
+			end
+		end
+	elseif not hasGui and record then
+		record:Destroy()
+		guiRecords[part] = nil
+	end
+end
+
+local function ScanIdParts()
+	local map = Workspace:FindFirstChild("Map")
+	if not map then return end
+	for _, obj in pairs(map:GetDescendants()) do
+		if obj:IsA("BasePart") and obj.Name == "Id" then
+			UpdateBillboard(obj)
+		end
+	end
+end
+
+local function FixAllProximityPrompts()
+	for _, prompt in pairs(Workspace:GetDescendants()) do
+		if prompt:IsA("ProximityPrompt") then
+			prompt.HoldDuration = 0
+		end
+	end
+end
+
+Workspace.DescendantAdded:Connect(function(descendant)
+	if descendant:IsA("BasePart") and descendant.Name == "Id" then
+		UpdateBillboard(descendant)
+	elseif descendant:IsA("ProximityPrompt") then
+		descendant.HoldDuration = 0
+	end
+end)
+
+FixAllProximityPrompts()
+ScanIdParts()
+
+RunService.Heartbeat:Connect(function()
+	ScanIdParts()
+	FixAllProximityPrompts()
+end)
