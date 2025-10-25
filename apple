@@ -1,0 +1,15 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+spawn(function()
+while true do
+local args = {
+{
+Status = "CaughtFish"
+}
+}
+pcall(function()
+ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("MinigameEvent"):FireServer(unpack(args))
+end)
+wait(5)
+end
+end)
