@@ -1,0 +1,163 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local character = player.Character or player.CharacterAdded:Wait()
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+-- 创建极简圆形按钮 UI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ProximitySwitch"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+
+local buttonSize = 50
+local mainButton = Instance.new("TextButton")
+mainButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+mainButton.Position = UDim2.new(0.5, -buttonSize/2, 0.5, -buttonSize/2)
+mainButton.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
+mainButton.Text = ""
+mainButton.BorderSizePixel = 0
+mainButton.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(1, 0)
+corner.Parent = mainButton
+
+-- 拖动功能
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+local function startDrag(input)
+	dragging = true
+	dragStart = input.Position
+	startPos = mainButton.Position
+
+	input.Changed:Connect(function()
+		if input.UserInputState == Enum.UserInputState.End then
+			dragging = false
+		end
+	end)
+end
+
+mainButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		startDrag(input)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		mainButton.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- 状态变量
+local isOn = false
+local originalValues = {}
+local promptAddedConn
+local renderConn
+
+-- 更新 rootPart（玩家死亡重生后更新）
+local function updateRootPart(char)
+	character = char
+	rootPart = character:WaitForChild("HumanoidRootPart")
+end
+player.CharacterAdded:Connect(updateRootPart)
+
+-- 修改单个 ProximityPrompt
+local function modifyPrompt(prompt)
+	if not originalValues[prompt] then
+		originalValues[prompt] = {
+			HoldDuration = prompt.HoldDuration,
+			MaxActivationDistance = prompt.MaxActivationDistance,
+			RequiresLineOfSight = prompt.RequiresLineOfSight,
+			Enabled = prompt.Enabled
+		}
+	end
+	prompt.HoldDuration = 0
+	prompt.MaxActivationDistance = 30
+	prompt.RequiresLineOfSight = false
+	prompt.Enabled = true -- 强制启用
+end
+
+-- 自动互动
+local function autoInteract()
+	if not isOn or not character or not rootPart then return end
+	for _, prompt in pairs(Workspace:GetDescendants()) do
+		if prompt:IsA("ProximityPrompt") then
+			modifyPrompt(prompt)
+			local part = prompt.Parent
+			if part:IsA("BasePart") and (part.Position - rootPart.Position).Magnitude <= 30 then
+				pcall(function()
+					prompt:InputHoldBegin()
+					prompt:InputHoldEnd()
+				end)
+			end
+		end
+	end
+end
+
+-- 开启功能
+local function enableProximity()
+	-- 立即处理现有Prompt
+	autoInteract()
+
+	-- 新增Prompt处理
+	promptAddedConn = Workspace.DescendantAdded:Connect(function(descendant)
+		if descendant:IsA("ProximityPrompt") then
+			modifyPrompt(descendant)
+		end
+	end)
+
+	-- 每帧自动互动
+	renderConn = RunService.RenderStepped:Connect(autoInteract)
+end
+
+-- 关闭功能并恢复原值
+local function disableProximity()
+	if promptAddedConn then
+		promptAddedConn:Disconnect()
+		promptAddedConn = nil
+	end
+	if renderConn then
+		renderConn:Disconnect()
+		renderConn = nil
+	end
+
+	for prompt, values in pairs(originalValues) do
+		if prompt and prompt.Parent then
+			prompt.HoldDuration = values.HoldDuration
+			prompt.MaxActivationDistance = values.MaxActivationDistance
+			prompt.RequiresLineOfSight = values.RequiresLineOfSight
+			prompt.Enabled = values.Enabled
+		end
+	end
+	originalValues = {}
+end
+
+-- 切换开关
+local function toggleSwitch()
+	isOn = not isOn
+	if isOn then
+		mainButton.BackgroundColor3 = Color3.fromRGB(80, 220, 100)
+		enableProximity()
+	else
+		mainButton.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
+		disableProximity()
+	end
+end
+
+mainButton.MouseButton1Click:Connect(toggleSwitch)
+
+print("✅ 自动互动 ProximityPrompt UI（强制启用隐藏/禁用的）已加载")
