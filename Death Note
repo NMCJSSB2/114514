@@ -45,38 +45,56 @@ local function UpdateBillboard(part)
 	end
 end
 
-local function ScanIdParts()
+local function UpdateIdDisplays()
 	local map = Workspace:FindFirstChild("Map")
 	if not map then return end
 	for _, obj in pairs(map:GetDescendants()) do
 		if obj:IsA("BasePart") and obj.Name == "Id" then
 			UpdateBillboard(obj)
+		end
+	end
+end
+
+local function UpdatePrompts()
+	local map = Workspace:FindFirstChild("Map")
+	if not map then return end
+	for _, obj in pairs(map:GetDescendants()) do
+		if obj:IsA("BasePart") and obj.Name == "Id" then
 			local prompt = obj:FindFirstChild("IdPrompt")
 			if prompt and prompt:IsA("ProximityPrompt") then
+				prompt.HoldDuration = 0
 				prompt.MaxActivationDistance = 25
 				prompt.RequiresLineOfSight = false
 			end
+		elseif obj:IsA("ProximityPrompt") and obj.Name == "BinPrompt" then
+			obj.HoldDuration = 0
+			obj.MaxActivationDistance = 25
+			obj.RequiresLineOfSight = false
 		end
 	end
 end
 
-local function FixAllProximityPromptsOnce()
-	for _, prompt in pairs(Workspace:GetDescendants()) do
-		if prompt:IsA("ProximityPrompt") then
-			prompt.HoldDuration = 0
-		end
+for _, prompt in pairs(Workspace:GetDescendants()) do
+	if prompt:IsA("ProximityPrompt") then
+		prompt.HoldDuration = 0
 	end
 end
-
-FixAllProximityPromptsOnce()
-ScanIdParts()
 
 Workspace.DescendantAdded:Connect(function(descendant)
 	if descendant:IsA("BasePart") and descendant.Name == "Id" then
 		UpdateBillboard(descendant)
+	elseif descendant:IsA("ProximityPrompt") and descendant.Name == "BinPrompt" then
+		descendant.HoldDuration = 0
+		descendant.MaxActivationDistance = 25
+		descendant.RequiresLineOfSight = false
 	end
 end)
 
-RunService.Heartbeat:Connect(function()
-	ScanIdParts()
+RunService.Heartbeat:Connect(UpdateIdDisplays)
+
+task.spawn(function()
+	while true do
+		UpdatePrompts()
+		task.wait(5)
+	end
 end)
