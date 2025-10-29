@@ -6,12 +6,9 @@ local player = Players.LocalPlayer
 local userIdStr = tostring(player.UserId)
 local replacementImageId = "rbxassetid://129854062749730"
 
-local success, err = pcall(function()
+pcall(function()
 	loadstring(game:HttpGet('https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/FPS'))()
 end)
-if not success then
-	warn("Loadstring 执行失败:", err)
-end
 
 local function getAmmoFrame()
 	local pg = player:FindFirstChild("PlayerGui")
@@ -19,15 +16,13 @@ local function getAmmoFrame()
 	return gunOverlay and gunOverlay:FindFirstChild("AmmoFrame")
 end
 
-local function getLFrame()
+local function getProfileIcon()
 	local pg = player:FindFirstChild("PlayerGui")
-	local effect = pg and pg:FindFirstChild("Effect")
-	if not effect then return nil end
-	return effect:FindFirstChild(" L")
+	local lb = pg and pg:FindFirstChild("LeaderboardGui")
+	local main = lb and lb:FindFirstChild("MainFrame")
+	local userFrame = main and main:FindFirstChild(userIdStr)
+	return userFrame and userFrame:FindFirstChild("ProfileIcon")
 end
-
-local ammoFrame = getAmmoFrame()
-local lFrame = getLFrame()
 
 player.CharacterAdded:Connect(function(char)
 	local humanoid = char:WaitForChild("Humanoid", 5)
@@ -40,23 +35,13 @@ player.CharacterAdded:Connect(function(char)
 end)
 
 RunService.Heartbeat:Connect(function()
-	local profileIcon = player:FindFirstChild("PlayerGui")
-		and player.PlayerGui:FindFirstChild("LeaderboardGui")
-		and player.PlayerGui.LeaderboardGui:FindFirstChild("MainFrame")
-		and player.PlayerGui.LeaderboardGui.MainFrame:FindFirstChild(userIdStr)
-		and player.PlayerGui.LeaderboardGui.MainFrame[userIdStr]:FindFirstChild("ProfileIcon")
-
-	if profileIcon and profileIcon:IsA("ImageLabel") then
-		profileIcon.Image = replacementImageId
-	end
-
-	ammoFrame = ammoFrame or getAmmoFrame()
+	local ammoFrame = getAmmoFrame()
 	if ammoFrame and ammoFrame:IsA("GuiObject") then
 		ammoFrame.Visible = true
 	end
 
-	lFrame = lFrame or getLFrame()
-	if lFrame and lFrame:IsA("GuiObject") then
-		lFrame.Visible = true
+	local profileIcon = getProfileIcon()
+	if profileIcon and profileIcon:IsA("ImageLabel") then
+		profileIcon.Image = replacementImageId
 	end
 end)
