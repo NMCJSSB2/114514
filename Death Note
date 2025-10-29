@@ -37,15 +37,8 @@ end
 local function UpdateBillboard(part)
 	local hasGui = HasVisibleSurfaceGui(part)
 	local record = guiRecords[part]
-
 	if hasGui and not record then
 		guiRecords[part] = CreateBillboard(part)
-		for _, desc in pairs(part:GetDescendants()) do
-			if desc:IsA("ProximityPrompt") then
-				desc.MaxActivationDistance = 25
-				desc.RequiresLineOfSight = false
-			end
-		end
 	elseif not hasGui and record then
 		record:Destroy()
 		guiRecords[part] = nil
@@ -58,6 +51,11 @@ local function ScanIdParts()
 	for _, obj in pairs(map:GetDescendants()) do
 		if obj:IsA("BasePart") and obj.Name == "Id" then
 			UpdateBillboard(obj)
+			local prompt = obj:FindFirstChild("IdPrompt")
+			if prompt and prompt:IsA("ProximityPrompt") then
+				prompt.MaxActivationDistance = 25
+				prompt.RequiresLineOfSight = false
+			end
 		end
 	end
 end
