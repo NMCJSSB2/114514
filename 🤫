@@ -1,0 +1,62 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+local FOV = 150
+local MaxDistance = 1000
+local SmoothSpeed = 0.3
+
+local function isVisible(targetHead)
+	local origin = Camera.CFrame.Position
+	local direction = (targetHead.Position - origin)
+	local raycastParams = RaycastParams.new()
+	raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+	raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+	local ray = Workspace:Raycast(origin, direction, raycastParams)
+	if ray then
+		return ray.Instance:IsDescendantOf(targetHead.Parent)
+	end
+	return true
+end
+
+local function screenDistance(targetPos)
+	local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
+	if onScreen then
+		local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+		return (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+	end
+	return math.huge
+end
+
+local function getTarget()
+	local closestHead
+	local closestDist = math.huge
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+			local head = player.Character.Head
+			if isVisible(head) then
+				local dist = screenDistance(head.Position)
+				if dist <= FOV and dist < closestDist then
+					closestDist = dist
+					closestHead = head
+				end
+			end
+		end
+	end
+	return closestHead
+end
+
+local function smoothLookAt(currentCFrame, targetPos)
+	local lookDir = (targetPos - currentCFrame.Position).Unit
+	local targetCFrame = CFrame.new(currentCFrame.Position, currentCFrame.Position + lookDir)
+	return currentCFrame:Lerp(targetCFrame, SmoothSpeed)
+end
+
+RunService.RenderStepped:Connect(function()
+	local targetHead = getTarget()
+	if targetHead then
+		Camera.CFrame = smoothLookAt(Camera.CFrame, targetHead.Position)
+	end
+end)
