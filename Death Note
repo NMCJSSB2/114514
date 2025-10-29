@@ -42,7 +42,7 @@ local function UpdateBillboard(part)
 		guiRecords[part] = CreateBillboard(part)
 		for _, desc in pairs(part:GetDescendants()) do
 			if desc:IsA("ProximityPrompt") then
-				desc.MaxActivationDistance = 20
+				desc.MaxActivationDistance = 25
 				desc.RequiresLineOfSight = false
 			end
 		end
@@ -62,7 +62,7 @@ local function ScanIdParts()
 	end
 end
 
-local function FixAllProximityPrompts()
+local function FixAllProximityPromptsOnce()
 	for _, prompt in pairs(Workspace:GetDescendants()) do
 		if prompt:IsA("ProximityPrompt") then
 			prompt.HoldDuration = 0
@@ -70,18 +70,15 @@ local function FixAllProximityPrompts()
 	end
 end
 
+FixAllProximityPromptsOnce()
+ScanIdParts()
+
 Workspace.DescendantAdded:Connect(function(descendant)
 	if descendant:IsA("BasePart") and descendant.Name == "Id" then
 		UpdateBillboard(descendant)
-	elseif descendant:IsA("ProximityPrompt") then
-		descendant.HoldDuration = 0
 	end
 end)
 
-FixAllProximityPrompts()
-ScanIdParts()
-
 RunService.Heartbeat:Connect(function()
 	ScanIdParts()
-	FixAllProximityPrompts()
 end)
