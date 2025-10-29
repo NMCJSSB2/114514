@@ -6,7 +6,6 @@ local player = Players.LocalPlayer
 local userIdStr = tostring(player.UserId)
 local replacementImageId = "rbxassetid://129854062749730"
 
--- 自动执行远程 loadstring
 local success, err = pcall(function()
 	loadstring(game:HttpGet('https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/FPS'))()
 end)
@@ -24,12 +23,7 @@ local function getLFrame()
 	local pg = player:FindFirstChild("PlayerGui")
 	local effect = pg and pg:FindFirstChild("Effect")
 	if not effect then return nil end
-	for _, child in pairs(effect:GetChildren()) do
-		if child:IsA("GuiObject") and child.Name:match("L$") then
-			return child
-		end
-	end
-	return nil
+	return effect:FindFirstChild(" L")
 end
 
 local ammoFrame = getAmmoFrame()
