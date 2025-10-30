@@ -4,12 +4,11 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
-local MaxBillboards = 10
+local AIFolder = Workspace:WaitForChild("AI")
+local AimbotEnabled = false
+local npcRecords = {}
 local MaxDistance = 1000
 local FOV = 250
-local AimbotEnabled = false
-
-local npcRecords = {}
 
 local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
 ScreenGui.ResetOnSpawn = false
@@ -62,16 +61,9 @@ end
 
 local function updateBillboards()
 	cleanDeadNPCs()
-	local count = 0
-	for _ in pairs(npcRecords) do count = count + 1 end
-	if count >= MaxBillboards then return end
-	for _, npc in pairs(Workspace:GetDescendants()) do
-		if npc:IsA("Model") and npc:FindFirstChild("Head") and not Players:GetPlayerFromCharacter(npc) then
-			if not npcRecords[npc] then
-				addEnemyBillboard(npc)
-				count = count + 1
-				if count >= MaxBillboards then break end
-			end
+	for _, npc in pairs(AIFolder:GetChildren()) do
+		if npc:IsA("Model") and npc:FindFirstChild("Head") then
+			addEnemyBillboard(npc)
 		end
 	end
 end
@@ -98,11 +90,11 @@ end
 local function getTarget()
 	local closestHead
 	local closestDist = math.huge
-	for _, npc in pairs(Workspace:GetDescendants()) do
-		if npc:IsA("Model") and npc:FindFirstChild("Head") and not Players:GetPlayerFromCharacter(npc) then
+	for _, npc in pairs(AIFolder:GetChildren()) do
+		if npc:IsA("Model") and npc:FindFirstChild("Head") then
 			local humanoid = npc:FindFirstChildOfClass("Humanoid")
-			local head = npc:FindFirstChild("Head")
-			if humanoid and head and humanoid.Health > 0 then
+			local head = npc.Head
+			if humanoid and humanoid.Health > 0 then
 				local distance = (head.Position - Camera.CFrame.Position).Magnitude
 				if distance < MaxDistance and isVisible(head) then
 					local dist = screenDistance(head.Position)
@@ -111,13 +103,28 @@ local function getTarget()
 						closestHead = head
 					end
 				end
-				addEnemyBillboard(npc)
 			end
 		end
 	end
 	cleanDeadNPCs()
 	return closestHead
 end
+
+task.spawn(function()
+	while true do
+		local mech = Workspace:FindFirstChild("Mech_" .. LocalPlayer.Name)
+		if mech and mech:FindFirstChild("Seat") then
+			local seat = mech.Seat
+			for _, child in pairs(seat:GetChildren()) do
+				if child:IsA("ProximityPrompt") then
+					child.MaxActivationDistance = 60
+					child.Enabled = true
+				end
+			end
+		end
+		task.wait(1)
+	end
+end)
 
 RunService.RenderStepped:Connect(function()
 	updateBillboards()
