@@ -8,7 +8,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local character = player.Character or player.CharacterAdded:Wait()
 local rootPart = character:WaitForChild("HumanoidRootPart")
 
--- 创建极简圆形按钮 UI
+-- UI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ProximitySwitch"
 screenGui.Parent = playerGui
@@ -27,7 +27,7 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(1, 0)
 corner.Parent = mainButton
 
--- 拖动功能
+-- 拖动
 local dragging = false
 local dragStart = nil
 local startPos = nil
@@ -62,20 +62,19 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- 状态变量
+-- 状态
 local isOn = false
 local originalValues = {}
 local promptAddedConn
-local renderConn
+local loopTask
 
--- 更新 rootPart（玩家死亡重生后更新）
 local function updateRootPart(char)
 	character = char
 	rootPart = character:WaitForChild("HumanoidRootPart")
 end
 player.CharacterAdded:Connect(updateRootPart)
 
--- 修改单个 ProximityPrompt
+-- 修改 Prompt
 local function modifyPrompt(prompt)
 	if not originalValues[prompt] then
 		originalValues[prompt] = {
@@ -86,9 +85,9 @@ local function modifyPrompt(prompt)
 		}
 	end
 	prompt.HoldDuration = 0
-	prompt.MaxActivationDistance = 30
+	prompt.MaxActivationDistance = 60
 	prompt.RequiresLineOfSight = false
-	prompt.Enabled = true -- 强制启用
+	prompt.Enabled = true
 end
 
 -- 自动互动
@@ -98,7 +97,7 @@ local function autoInteract()
 		if prompt:IsA("ProximityPrompt") then
 			modifyPrompt(prompt)
 			local part = prompt.Parent
-			if part:IsA("BasePart") and (part.Position - rootPart.Position).Magnitude <= 30 then
+			if part:IsA("BasePart") and (part.Position - rootPart.Position).Magnitude <= 60 then
 				pcall(function()
 					prompt:InputHoldBegin()
 					prompt:InputHoldEnd()
@@ -108,31 +107,31 @@ local function autoInteract()
 	end
 end
 
--- 开启功能
+-- 启用
 local function enableProximity()
-	-- 立即处理现有Prompt
-	autoInteract()
-
-	-- 新增Prompt处理
 	promptAddedConn = Workspace.DescendantAdded:Connect(function(descendant)
 		if descendant:IsA("ProximityPrompt") then
 			modifyPrompt(descendant)
 		end
 	end)
 
-	-- 每帧自动互动
-	renderConn = RunService.RenderStepped:Connect(autoInteract)
+	loopTask = task.spawn(function()
+		while isOn do
+			autoInteract()
+			task.wait(0.5)
+		end
+	end)
 end
 
--- 关闭功能并恢复原值
+-- 禁用
 local function disableProximity()
 	if promptAddedConn then
 		promptAddedConn:Disconnect()
 		promptAddedConn = nil
 	end
-	if renderConn then
-		renderConn:Disconnect()
-		renderConn = nil
+	if loopTask then
+		task.cancel(loopTask)
+		loopTask = nil
 	end
 
 	for prompt, values in pairs(originalValues) do
@@ -146,7 +145,7 @@ local function disableProximity()
 	originalValues = {}
 end
 
--- 切换开关
+-- 开关
 local function toggleSwitch()
 	isOn = not isOn
 	if isOn then
@@ -160,4 +159,4 @@ end
 
 mainButton.MouseButton1Click:Connect(toggleSwitch)
 
-print("✅ 自动互动 ProximityPrompt UI（强制启用隐藏/禁用的）已加载")
+print("自动互动已加载")
