@@ -9,15 +9,7 @@ local MaxDistance = 1000
 local SmoothSpeed = 0.7
 
 local function isVisible(targetHead)
-	local origin = Camera.CFrame.Position
-	local direction = (targetHead.Position - origin)
-	local raycastParams = RaycastParams.new()
-	raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
-	raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-	local ray = Workspace:Raycast(origin, direction, raycastParams)
-	if ray then
-		return ray.Instance:IsDescendantOf(targetHead.Parent)
-	end
+	-- 去掉墙壁检测，直接返回 true
 	return true
 end
 
