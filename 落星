@@ -1,0 +1,67 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ScriptChoiceMenu"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+
+local buttonSize = UDim2.new(0, 150, 0, 150)
+local spacing = 20
+
+-- 左边按钮
+local leftButton = Instance.new("ImageButton")
+leftButton.Size = buttonSize
+leftButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - spacing/2, 0.5, -buttonSize.Y.Offset/2)
+leftButton.Image = "rbxassetid://125942656780823"
+leftButton.BackgroundTransparency = 0
+leftButton.BackgroundColor3 = Color3.fromRGB(255,255,255)
+leftButton.BorderSizePixel = 0
+leftButton.Parent = screenGui
+
+local leftText = Instance.new("TextLabel")
+leftText.Size = UDim2.new(1,0,1,0)
+leftText.BackgroundTransparency = 1
+leftText.Text = "对战"
+leftText.Font = Enum.Font.SourceSansBold
+leftText.TextColor3 = Color3.fromRGB(255,255,255)
+leftText.TextStrokeTransparency = 0
+leftText.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+leftText.TextScaled = true
+leftText.Parent = leftButton
+
+-- 右边按钮
+local rightButton = Instance.new("ImageButton")
+rightButton.Size = buttonSize
+rightButton.Position = UDim2.new(0.5, spacing/2, 0.5, -buttonSize.Y.Offset/2)
+rightButton.Image = "rbxassetid://140696796849717"
+rightButton.BackgroundTransparency = 0
+rightButton.BackgroundColor3 = Color3.fromRGB(255,255,255)
+rightButton.BorderSizePixel = 0
+rightButton.Parent = screenGui
+
+local rightText = Instance.new("TextLabel")
+rightText.Size = UDim2.new(1,0,1,0)
+rightText.BackgroundTransparency = 1
+rightText.Text = "经典"
+rightText.Font = Enum.Font.SourceSansBold
+rightText.TextColor3 = Color3.fromRGB(255,255,255)
+rightText.TextStrokeTransparency = 0
+rightText.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+rightText.TextScaled = true
+rightText.Parent = rightButton
+
+-- 点击左边按钮
+leftButton.MouseButton1Click:Connect(function()
+	screenGui:Destroy()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E8%90%BD%E6%98%9F%E5%AF%B9%E6%88%98'))()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/interactive'))()
+end)
+
+-- 点击右边按钮
+rightButton.MouseButton1Click:Connect(function()
+	screenGui:Destroy()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E8%90%BD%E6%98%9F%E7%BB%8F%E5%85%B8'))()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/interactive'))()
+end)
