@@ -6,7 +6,7 @@ local Camera = Workspace.CurrentCamera
 
 local MaxBillboards = 10
 local MaxDistance = 1000
-local FOV = 150
+local FOV = 250
 local AimbotEnabled = false
 
 local npcRecords = {}
