@@ -8,7 +8,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local character = player.Character or player.CharacterAdded:Wait()
 local rootPart = character:WaitForChild("HumanoidRootPart")
 
--- UI
+-- 创建按钮
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ProximitySwitch"
 screenGui.Parent = playerGui
@@ -27,16 +27,12 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(1, 0)
 corner.Parent = mainButton
 
--- 拖动
-local dragging = false
-local dragStart = nil
-local startPos = nil
-
+-- 拖动按钮
+local dragging, dragStart, startPos = false, nil, nil
 local function startDrag(input)
 	dragging = true
 	dragStart = input.Position
 	startPos = mainButton.Position
-
 	input.Changed:Connect(function()
 		if input.UserInputState == Enum.UserInputState.End then
 			dragging = false
@@ -74,7 +70,7 @@ local function updateRootPart(char)
 end
 player.CharacterAdded:Connect(updateRootPart)
 
--- 修改 Prompt
+-- 修改 Prompt 属性
 local function modifyPrompt(prompt)
 	if not originalValues[prompt] then
 		originalValues[prompt] = {
@@ -90,7 +86,7 @@ local function modifyPrompt(prompt)
 	prompt.Enabled = true
 end
 
--- 自动互动
+-- 互动
 local function autoInteract()
 	if not isOn or not character or not rootPart then return end
 	for _, prompt in pairs(Workspace:GetDescendants()) do
@@ -99,15 +95,14 @@ local function autoInteract()
 			local part = prompt.Parent
 			if part:IsA("BasePart") and (part.Position - rootPart.Position).Magnitude <= 60 then
 				pcall(function()
-					prompt:InputHoldBegin()
-					prompt:InputHoldEnd()
+					fireproximityprompt(prompt)
 				end)
 			end
 		end
 	end
 end
 
--- 启用
+-- 开启功能
 local function enableProximity()
 	promptAddedConn = Workspace.DescendantAdded:Connect(function(descendant)
 		if descendant:IsA("ProximityPrompt") then
@@ -123,7 +118,7 @@ local function enableProximity()
 	end)
 end
 
--- 禁用
+-- 关闭功能
 local function disableProximity()
 	if promptAddedConn then
 		promptAddedConn:Disconnect()
@@ -145,7 +140,7 @@ local function disableProximity()
 	originalValues = {}
 end
 
--- 开关
+-- 切换开关
 local function toggleSwitch()
 	isOn = not isOn
 	if isOn then
@@ -158,5 +153,3 @@ local function toggleSwitch()
 end
 
 mainButton.MouseButton1Click:Connect(toggleSwitch)
-
-print("自动互动已加载")
