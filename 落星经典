@@ -1,39 +1,41 @@
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
-local FOV = 150
+local MaxBillboards = 10
 local MaxDistance = 1000
+local FOV = 150
 local AimbotEnabled = false
 
---== UI==--
+local npcRecords = {}
+
 local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
 ScreenGui.ResetOnSpawn = false
 
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, 60, 0, 60)
-ToggleButton.Position = UDim2.new(0, 20, 0, 0.8)
+ToggleButton.Position = UDim2.new(0, 20, 0, 20)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 ToggleButton.Text = ""
 ToggleButton.BorderSizePixel = 0
 ToggleButton.Parent = ScreenGui
 
---== 标志 ==--
-local npcRecords = {}
+ToggleButton.MouseButton1Click:Connect(function()
+	AimbotEnabled = not AimbotEnabled
+	ToggleButton.BackgroundColor3 = AimbotEnabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(80, 80, 80)
+end)
 
 local function addEnemyBillboard(npc)
 	if not npc or not npc:FindFirstChild("Head") or npcRecords[npc] then return end
 	local head = npc.Head
-
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "EnemyTag"
 	billboard.Adornee = head
 	billboard.Size = UDim2.new(0, 100, 0, 40)
 	billboard.AlwaysOnTop = true
 	billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, 0, 1, 0)
 	label.BackgroundTransparency = 1
@@ -44,41 +46,44 @@ local function addEnemyBillboard(npc)
 	label.TextStrokeTransparency = 0
 	label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	label.Parent = billboard
-
 	billboard.Parent = npc
 	npcRecords[npc] = billboard
 end
 
-local function cleanEnemyBillboards()
+local function cleanDeadNPCs()
 	for npc, billboard in pairs(npcRecords) do
-		if not npc.Parent or not npc:FindFirstChild("Head") then
+		local humanoid = npc:FindFirstChildOfClass("Humanoid")
+		if not npc.Parent or not npc:FindFirstChild("Head") or (humanoid and humanoid.Health <= 0) then
 			if billboard then billboard:Destroy() end
 			npcRecords[npc] = nil
 		end
 	end
 end
 
---== 墙壁判定逻辑 ==--
+local function updateBillboards()
+	cleanDeadNPCs()
+	local count = 0
+	for _ in pairs(npcRecords) do count = count + 1 end
+	if count >= MaxBillboards then return end
+	for _, npc in pairs(Workspace:GetDescendants()) do
+		if npc:IsA("Model") and npc:FindFirstChild("Head") and not Players:GetPlayerFromCharacter(npc) then
+			if not npcRecords[npc] then
+				addEnemyBillboard(npc)
+				count = count + 1
+				if count >= MaxBillboards then break end
+			end
+		end
+	end
+end
+
 local function isVisible(targetHead)
 	local origin = Camera.CFrame.Position
-	local direction = (targetHead.Position - origin)
+	local direction = targetHead.Position - origin
 	local params = RaycastParams.new()
 	params.FilterDescendantsInstances = {LocalPlayer.Character}
 	params.FilterType = Enum.RaycastFilterType.Blacklist
 	local ray = Workspace:Raycast(origin, direction, params)
-
-	if ray then
-		local hitPos = ray.Position
-		local hitDist = (hitPos - origin).Magnitude
-		if ray.Instance:IsDescendantOf(targetHead.Parent) then
-			return true -- 射中NPC
-		elseif hitDist <= 10 then
-			return true
-		else
-			return false
-		end
-	end
-	return true
+	return not ray or ray.Instance:IsDescendantOf(targetHead.Parent)
 end
 
 local function screenDistance(targetPos)
@@ -94,7 +99,7 @@ local function getTarget()
 	local closestHead
 	local closestDist = math.huge
 	for _, npc in pairs(Workspace:GetDescendants()) do
-		if npc:IsA("Model") and not Players:GetPlayerFromCharacter(npc) then
+		if npc:IsA("Model") and npc:FindFirstChild("Head") and not Players:GetPlayerFromCharacter(npc) then
 			local humanoid = npc:FindFirstChildOfClass("Humanoid")
 			local head = npc:FindFirstChild("Head")
 			if humanoid and head and humanoid.Health > 0 then
@@ -110,20 +115,16 @@ local function getTarget()
 			end
 		end
 	end
-	cleanEnemyBillboards()
+	cleanDeadNPCs()
 	return closestHead
 end
 
---== UI 按钮逻辑 ==--
-ToggleButton.MouseButton1Click:Connect(function()
-	AimbotEnabled = not AimbotEnabled
-	ToggleButton.BackgroundColor3 = AimbotEnabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(80, 80, 80)
-end)
-
---== 每帧执行 ==--
 RunService.RenderStepped:Connect(function()
-	local targetHead = getTarget()
-	if AimbotEnabled and targetHead then
-		Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
+	updateBillboards()
+	if AimbotEnabled then
+		local targetHead = getTarget()
+		if targetHead then
+			Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
+		end
 	end
 end)
