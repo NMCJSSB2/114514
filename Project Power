@@ -1,0 +1,140 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+if game.PlaceId ~= 103072644129928 then return end
+
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Parent = player.PlayerGui
+gui.ResetOnSpawn = false
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 35, 0, 40)
+toggleBtn.Position = UDim2.new(1, -70, 0, -20)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.Text = "<"
+toggleBtn.Font = Enum.Font.SourceSansBold
+toggleBtn.TextSize = 18
+toggleBtn.Active = true
+toggleBtn.Parent = gui
+
+local corner1 = Instance.new("UICorner")
+corner1.CornerRadius = UDim.new(0,8)
+corner1.Parent = toggleBtn
+
+local mainUI = Instance.new("Frame")
+mainUI.Size = UDim2.new(0, 350, 0, 400)
+mainUI.Position = UDim2.new(1, 350, 0.5, -200)
+mainUI.BackgroundColor3 = Color3.fromRGB(22,104,169)
+mainUI.Parent = gui
+mainUI.Active = true
+
+local corner2 = Instance.new("UICorner")
+corner2.CornerRadius = UDim.new(0,12)
+corner2.Parent = mainUI
+
+local border = Instance.new("UIStroke")
+border.Color = Color3.fromRGB(52,91,156)
+border.Thickness = 3
+border.Parent = mainUI
+
+local opened = false
+
+local function slide(show)
+	local goal = {}
+	if show then
+		goal.Position = UDim2.new(1, -370, 0.5, -200)
+	else
+		goal.Position = UDim2.new(1, 350, 0.5, -200)
+	end
+	TweenService:Create(mainUI, TweenInfo.new(0.4, Enum.EasingStyle.Quint), goal):Play()
+end
+
+toggleBtn.MouseButton1Click:Connect(function()
+	opened = not opened
+	if opened then
+		toggleBtn.Text = ">"
+		slide(true)
+	else
+		toggleBtn.Text = "<"
+		slide(false)
+	end
+end)
+
+local function createFlightButton(name, color, posX, posY, argsTable, gradientColors)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 150, 0, 50)
+	btn.Position = UDim2.new(0, posX, 0, posY)
+	btn.BackgroundColor3 = mainUI.BackgroundColor3
+	btn.BorderColor3 = border.Color
+	btn.BorderSizePixel = 2
+	btn.Text = name
+	btn.TextColor3 = color
+	btn.Font = Enum.Font.SourceSansBold
+	btn.TextSize = 20
+	btn.Parent = mainUI
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(0,0,0)
+	stroke.Thickness = 2
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = btn
+
+	if gradientColors then
+		local gradient = Instance.new("UIGradient")
+		gradient.Color = ColorSequence.new(gradientColors)
+		gradient.Rotation = 45
+		gradient.Parent = btn
+	end
+
+	btn.MouseButton1Click:Connect(function()
+		ReplicatedStorage:WaitForChild("game_folder")
+			:WaitForChild("remote")
+			:WaitForChild("movement_remote")
+			:FireServer(unpack(argsTable))
+	end)
+end
+
+createFlightButton("科技拖尾", Color3.fromRGB(255,255,255), 20, 20, {"TechJacket","FlightOn",103074406680475.81}, {ColorSequenceKeypoint.new(0, Color3.fromRGB(0,170,255)),ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,255,255)),ColorSequenceKeypoint.new(1, Color3.fromRGB(0,170,255))})
+createFlightButton("雷电拖尾", Color3.fromRGB(255,255,0), 180, 20, {"Powerplex","FlightOn",103074406680991.84}, {ColorSequenceKeypoint.new(0, Color3.fromRGB(255,200,0)),ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,255,0)),ColorSequenceKeypoint.new(1, Color3.fromRGB(255,200,0))})
+createFlightButton("原子拖尾", Color3.fromRGB(255,105,180), 20, 90, {"AtomEve","FlightOn",103074406693468.73}, {ColorSequenceKeypoint.new(0, Color3.fromRGB(255,105,180)),ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,182,193)),ColorSequenceKeypoint.new(1, Color3.fromRGB(255,105,180))})
+createFlightButton("普通拖尾", Color3.fromRGB(255,255,255), 180, 90, {"Viltrumite","FlightOn",103074406693596.33}, {ColorSequenceKeypoint.new(0, Color3.fromRGB(200,200,200)),ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,255,255)),ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,200))})
+
+local protectionEnabled = false
+local protectionBtn = Instance.new("TextButton")
+protectionBtn.Size = UDim2.new(0, 310, 0, 50)
+protectionBtn.Position = UDim2.new(0, 20, 0, 160)
+protectionBtn.BackgroundColor3 = mainUI.BackgroundColor3
+protectionBtn.BorderColor3 = border.Color
+protectionBtn.BorderSizePixel = 2
+protectionBtn.Text = "开启无敌"
+protectionBtn.TextColor3 = Color3.fromRGB(255,255,255)
+protectionBtn.Font = Enum.Font.SourceSansBold
+protectionBtn.TextSize = 20
+protectionBtn.Parent = mainUI
+
+local stroke2 = Instance.new("UIStroke")
+stroke2.Color = Color3.fromRGB(0,0,0)
+stroke2.Thickness = 2
+stroke2.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+stroke2.Parent = protectionBtn
+
+protectionBtn.MouseButton1Click:Connect(function()
+	if not protectionEnabled then
+		ReplicatedStorage:WaitForChild("game_folder")
+			:WaitForChild("remote")
+			:WaitForChild("tutorial_remote")
+			:FireServer("StartTutorial")
+		protectionBtn.Text = "关闭无敌"
+		protectionEnabled = true
+	else
+		ReplicatedStorage:WaitForChild("game_folder")
+			:WaitForChild("remote")
+			:WaitForChild("tutorial_remote")
+			:FireServer("EndTutorial")
+		protectionBtn.Text = "开启保护"
+		protectionEnabled = false
+	end
+end)
