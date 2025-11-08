@@ -41,7 +41,6 @@ border.Thickness = 3
 border.Parent = mainUI
 
 local opened = false
-
 local function slide(show)
 	local goal = {}
 	if show then
@@ -90,22 +89,95 @@ local function createFlightButton(name, color, posX, posY, argsTable, gradientCo
 	end
 
 	btn.MouseButton1Click:Connect(function()
-		ReplicatedStorage:WaitForChild("game_folder")
-			:WaitForChild("remote")
-			:WaitForChild("movement_remote")
-			:FireServer(unpack(argsTable))
+		ReplicatedStorage
+		:WaitForChild("game_folder")
+		:WaitForChild("remote")
+		:WaitForChild("movement_remote")
+		:FireServer(unpack(argsTable))
 	end)
 end
 
-createFlightButton("科技拖尾", Color3.fromRGB(255,255,255), 20, 20, {"TechJacket","FlightOn",103074406680475.81}, {ColorSequenceKeypoint.new(0, Color3.fromRGB(0,170,255)),ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,255,255)),ColorSequenceKeypoint.new(1, Color3.fromRGB(0,170,255))})
-createFlightButton("雷电拖尾", Color3.fromRGB(255,255,0), 180, 20, {"Powerplex","FlightOn",103074406680991.84}, {ColorSequenceKeypoint.new(0, Color3.fromRGB(255,200,0)),ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,255,0)),ColorSequenceKeypoint.new(1, Color3.fromRGB(255,200,0))})
-createFlightButton("原子拖尾", Color3.fromRGB(255,105,180), 20, 90, {"AtomEve","FlightOn",103074406693468.73}, {ColorSequenceKeypoint.new(0, Color3.fromRGB(255,105,180)),ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,182,193)),ColorSequenceKeypoint.new(1, Color3.fromRGB(255,105,180))})
-createFlightButton("普通拖尾", Color3.fromRGB(255,255,255), 180, 90, {"Viltrumite","FlightOn",103074406693596.33}, {ColorSequenceKeypoint.new(0, Color3.fromRGB(200,200,200)),ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,255,255)),ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,200))})
+createFlightButton("科技拖尾", Color3.fromRGB(255,255,255), 20, 20,
+	{"TechJacket","FlightOn",103074406680475.81},
+	{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0,170,255)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,255,255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0,170,255))
+	}
+)
+createFlightButton("雷电拖尾", Color3.fromRGB(255,255,0), 180, 20,
+	{"Powerplex","FlightOn",103074406680991.84},
+	{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255,200,0)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,255,0)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255,200,0))
+	}
+)
+createFlightButton("原子拖尾", Color3.fromRGB(255,105,180), 20, 90,
+	{"AtomEve","FlightOn",103074406693468.73},
+	{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255,105,180)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,182,193)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255,105,180))
+	}
+)
+createFlightButton("普通拖尾", Color3.fromRGB(255,255,255), 180, 90,
+	{"Viltrumite","FlightOn",103074406693596.33},
+	{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(200,200,200)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,255,255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,200))
+	}
+)
+
+createFlightButton(
+	"传送拖尾",
+	Color3.fromRGB(0,255,0),
+	20,
+	160,
+	{"Angstrom","FlightOn",103074406785806.58},
+	{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0,255,0)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150,255,150)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0,255,0))
+	}
+)
+
+local greenBtn = Instance.new("TextButton")
+greenBtn.Size = UDim2.new(0, 150, 0, 50)
+greenBtn.Position = UDim2.new(0, 180, 0, 160)
+greenBtn.BackgroundColor3 = mainUI.BackgroundColor3
+greenBtn.BorderColor3 = border.Color
+greenBtn.BorderSizePixel = 2
+greenBtn.Text = "绿色传送脚本"
+greenBtn.TextColor3 = Color3.fromRGB(100,255,100)
+greenBtn.Font = Enum.Font.SourceSansBold
+greenBtn.TextSize = 20
+greenBtn.Parent = mainUI
+
+local strokeG = Instance.new("UIStroke")
+strokeG.Color = Color3.fromRGB(0,0,0)
+strokeG.Thickness = 2
+strokeG.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+strokeG.Parent = greenBtn
+
+local gradientG = Instance.new("UIGradient")
+gradientG.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(100,255,100)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(180,255,180)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(100,255,100))
+}
+gradientG.Rotation = 45
+gradientG.Parent = greenBtn
+
+greenBtn.MouseButton1Click:Connect(function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E9%A1%B9%E7%9B%AE%E7%94%B5%E6%BA%90%E4%BC%A0%E9%80%81%E6%8C%89%E9%92%AE"))()
+end)
 
 local protectionEnabled = false
 local protectionBtn = Instance.new("TextButton")
 protectionBtn.Size = UDim2.new(0, 310, 0, 50)
-protectionBtn.Position = UDim2.new(0, 20, 0, 160)
+protectionBtn.Position = UDim2.new(0, 20, 0, 230)
 protectionBtn.BackgroundColor3 = mainUI.BackgroundColor3
 protectionBtn.BorderColor3 = border.Color
 protectionBtn.BorderSizePixel = 2
@@ -123,18 +195,12 @@ stroke2.Parent = protectionBtn
 
 protectionBtn.MouseButton1Click:Connect(function()
 	if not protectionEnabled then
-		ReplicatedStorage:WaitForChild("game_folder")
-			:WaitForChild("remote")
-			:WaitForChild("tutorial_remote")
-			:FireServer("StartTutorial")
+		ReplicatedStorage.game_folder.remote.tutorial_remote:FireServer("StartTutorial")
 		protectionBtn.Text = "关闭无敌"
 		protectionEnabled = true
 	else
-		ReplicatedStorage:WaitForChild("game_folder")
-			:WaitForChild("remote")
-			:WaitForChild("tutorial_remote")
-			:FireServer("EndTutorial")
-		protectionBtn.Text = "开启保护"
+		ReplicatedStorage.game_folder.remote.tutorial_remote:FireServer("EndTutorial")
+		protectionBtn.Text = "开启无敌"
 		protectionEnabled = false
 	end
 end)
