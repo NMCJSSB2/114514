@@ -1,0 +1,50 @@
+local gui = Instance.new("ScreenGui")
+gui.ResetOnSpawn = false
+gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local button1 = Instance.new("ImageButton")
+button1.Size = UDim2.new(0.05, 0, 0.125, 0)
+button1.Position = UDim2.new(0.73, 0, 0.823, 0)
+button1.BackgroundTransparency = 1
+button1.Image = "rbxassetid://100674962463500"
+button1.ImageColor3 = Color3.fromRGB(100, 255, 100)
+button1.Parent = gui
+
+button1.MouseButton1Click:Connect(function()
+	local args = {
+		"Angstrom",
+		"FlyDodge",
+		vector.create(-13.690098762512207, -5.127229690551758, 128.87986755371094),
+		"Forward"
+	}
+
+	game:GetService("ReplicatedStorage")
+		:WaitForChild("game_folder")
+		:WaitForChild("remote")
+		:WaitForChild("movement_remote")
+		:FireServer(unpack(args))
+end)
+
+local button2 = Instance.new("ImageButton")
+button2.Size = UDim2.new(0.05, 0, 0.125, 0)
+button2.Position = UDim2.new(0.79, 0, 0.823, 0)
+button2.BackgroundTransparency = 1
+button2.Image = "rbxassetid://101432286813001"
+button2.ImageColor3 = Color3.fromRGB(100, 255, 100)
+button2.Parent = gui
+
+button2.MouseButton1Click:Connect(function()
+	local args = {
+		"Angstrom",
+		"Clamp",
+		workspace:WaitForChild("Characters"):WaitForChild("LowDummy"),
+		"OrbSwarm",
+		[6] = 103074406785778.03
+	}
+
+	game:GetService("ReplicatedStorage")
+		:WaitForChild("game_folder")
+		:WaitForChild("remote")
+		:WaitForChild("ability_remote")
+		:FireServer(unpack(args))
+end)
