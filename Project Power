@@ -8,7 +8,9 @@ local player = Players.LocalPlayer
 local gui = Instance.new("ScreenGui")
 gui.Parent = player.PlayerGui
 gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
+-- 小号展开按钮
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Size = UDim2.new(0, 35, 0, 40)
 toggleBtn.Position = UDim2.new(1, -70, 0, -20)
@@ -24,12 +26,14 @@ local corner1 = Instance.new("UICorner")
 corner1.CornerRadius = UDim.new(0,8)
 corner1.Parent = toggleBtn
 
+-- 大UI
 local mainUI = Instance.new("Frame")
 mainUI.Size = UDim2.new(0, 350, 0, 400)
 mainUI.Position = UDim2.new(1, 350, 0.5, -200)
 mainUI.BackgroundColor3 = Color3.fromRGB(22,104,169)
 mainUI.Parent = gui
 mainUI.Active = true
+mainUI.ZIndex = 2
 
 local corner2 = Instance.new("UICorner")
 corner2.CornerRadius = UDim.new(0,12)
@@ -40,6 +44,18 @@ border.Color = Color3.fromRGB(52,91,156)
 border.Thickness = 3
 border.Parent = mainUI
 
+-- 背景图层（贴在大UI表面）
+local bgImage = Instance.new("ImageLabel")
+bgImage.Parent = mainUI
+bgImage.Size = UDim2.new(1, 0, 1, 0)
+bgImage.Position = UDim2.new(0, 0, 0, 0)
+bgImage.BackgroundTransparency = 1
+bgImage.Image = "rbxassetid://80365869333691"
+bgImage.ImageTransparency = 0.45
+bgImage.ScaleType = Enum.ScaleType.Fit
+bgImage.ZIndex = 1
+
+-- 打开/关闭大UI
 local opened = false
 local function slide(show)
 	local goal = {}
@@ -62,6 +78,7 @@ toggleBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
+-- 创建拖尾按钮函数
 local function createFlightButton(name, color, posX, posY, argsTable, gradientColors)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0, 150, 0, 50)
@@ -74,6 +91,7 @@ local function createFlightButton(name, color, posX, posY, argsTable, gradientCo
 	btn.Font = Enum.Font.SourceSansBold
 	btn.TextSize = 20
 	btn.Parent = mainUI
+	btn.ZIndex = 2
 
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = Color3.fromRGB(0,0,0)
@@ -89,14 +107,14 @@ local function createFlightButton(name, color, posX, posY, argsTable, gradientCo
 	end
 
 	btn.MouseButton1Click:Connect(function()
-		ReplicatedStorage
-		:WaitForChild("game_folder")
+		ReplicatedStorage:WaitForChild("game_folder")
 		:WaitForChild("remote")
 		:WaitForChild("movement_remote")
 		:FireServer(unpack(argsTable))
 	end)
 end
 
+-- 添加拖尾按钮
 createFlightButton("科技拖尾", Color3.fromRGB(255,255,255), 20, 20,
 	{"TechJacket","FlightOn",103074406680475.81},
 	{
@@ -129,12 +147,7 @@ createFlightButton("普通拖尾", Color3.fromRGB(255,255,255), 180, 90,
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,200))
 	}
 )
-
-createFlightButton(
-	"传送拖尾",
-	Color3.fromRGB(0,255,0),
-	20,
-	160,
+createFlightButton("传送拖尾", Color3.fromRGB(0,255,0), 20, 160,
 	{"Angstrom","FlightOn",103074406785806.58},
 	{
 		ColorSequenceKeypoint.new(0, Color3.fromRGB(0,255,0)),
@@ -143,17 +156,19 @@ createFlightButton(
 	}
 )
 
+-- 绿色传送脚本按钮
 local greenBtn = Instance.new("TextButton")
 greenBtn.Size = UDim2.new(0, 150, 0, 50)
 greenBtn.Position = UDim2.new(0, 180, 0, 160)
 greenBtn.BackgroundColor3 = mainUI.BackgroundColor3
 greenBtn.BorderColor3 = border.Color
 greenBtn.BorderSizePixel = 2
-greenBtn.Text = "绿色传送脚本"
+greenBtn.Text = "加技能"
 greenBtn.TextColor3 = Color3.fromRGB(100,255,100)
 greenBtn.Font = Enum.Font.SourceSansBold
 greenBtn.TextSize = 20
 greenBtn.Parent = mainUI
+greenBtn.ZIndex = 2
 
 local strokeG = Instance.new("UIStroke")
 strokeG.Color = Color3.fromRGB(0,0,0)
@@ -174,6 +189,7 @@ greenBtn.MouseButton1Click:Connect(function()
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E9%A1%B9%E7%9B%AE%E7%94%B5%E6%BA%90%E4%BC%A0%E9%80%81%E6%8C%89%E9%92%AE"))()
 end)
 
+-- 开启无敌按钮
 local protectionEnabled = false
 local protectionBtn = Instance.new("TextButton")
 protectionBtn.Size = UDim2.new(0, 310, 0, 50)
@@ -186,12 +202,23 @@ protectionBtn.TextColor3 = Color3.fromRGB(255,255,255)
 protectionBtn.Font = Enum.Font.SourceSansBold
 protectionBtn.TextSize = 20
 protectionBtn.Parent = mainUI
+protectionBtn.ZIndex = 2
 
 local stroke2 = Instance.new("UIStroke")
 stroke2.Color = Color3.fromRGB(0,0,0)
 stroke2.Thickness = 2
 stroke2.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 stroke2.Parent = protectionBtn
+
+-- 渐变效果
+local gradientP = Instance.new("UIGradient")
+gradientP.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200,200,255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
+}
+gradientP.Rotation = 45
+gradientP.Parent = protectionBtn
 
 protectionBtn.MouseButton1Click:Connect(function()
 	if not protectionEnabled then
