@@ -27,7 +27,7 @@ end)
 
 local button2 = Instance.new("ImageButton")
 button2.Size = UDim2.new(0.05, 0, 0.125, 0)
-button2.Position = UDim2.new(0.79, 0, 0.823, 0)
+button2.Position = UDim2.new(0.785, 0, 0.76, 0)
 button2.BackgroundTransparency = 1
 button2.Image = "rbxassetid://101432286813001"
 button2.ImageColor3 = Color3.fromRGB(100, 255, 100)
