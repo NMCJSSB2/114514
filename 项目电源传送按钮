@@ -1,6 +1,10 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
 local gui = Instance.new("ScreenGui")
 gui.ResetOnSpawn = false
-gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local button1 = Instance.new("ImageButton")
 button1.Size = UDim2.new(0.05, 0, 0.125, 0)
@@ -18,8 +22,7 @@ button1.MouseButton1Click:Connect(function()
 		"Forward"
 	}
 
-	game:GetService("ReplicatedStorage")
-		:WaitForChild("game_folder")
+	ReplicatedStorage:WaitForChild("game_folder")
 		:WaitForChild("remote")
 		:WaitForChild("movement_remote")
 		:FireServer(unpack(args))
@@ -42,9 +45,19 @@ button2.MouseButton1Click:Connect(function()
 		[6] = 103074406785778.03
 	}
 
-	game:GetService("ReplicatedStorage")
-		:WaitForChild("game_folder")
+	ReplicatedStorage:WaitForChild("game_folder")
 		:WaitForChild("remote")
 		:WaitForChild("ability_remote")
 		:FireServer(unpack(args))
+
+	local char = LocalPlayer.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then
+			local anim = Instance.new("Animation")
+			anim.AnimationId = "rbxassetid://78422606508139"
+			local track = hum:LoadAnimation(anim)
+			track:Play()
+		end
+	end
 end)
