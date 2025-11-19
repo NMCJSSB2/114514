@@ -1,0 +1,48 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+local gui = Instance.new("ScreenGui")
+gui.ResetOnSpawn = false
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local btn = Instance.new("ImageButton")
+btn.Size = UDim2.new(0.06, 0, 0.15, 0)
+btn.Position = UDim2.new(0.845, 0, 0.7, 0)
+btn.BackgroundTransparency = 1
+btn.Image = "rbxassetid://120142508289399"
+btn.ImageColor3 = Color3.fromRGB(0, 140, 255)
+btn.Parent = gui
+
+btn.MouseButton1Click:Connect(function()
+    local myChar = LocalPlayer.Character
+    if not myChar then return end
+
+    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return end
+
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local root = plr.Character:FindFirstChild("HumanoidRootPart")
+            if root then
+                local distance = (root.Position - myRoot.Position).Magnitude
+                if distance <= 80 then
+                    local args = {
+                        "TechJacket",
+                        "M1",
+                        plr.Character,
+                        "BoostCombatEnd",
+                        1,
+                        103074407640034.95
+                    }
+
+                    ReplicatedStorage
+                        :WaitForChild("game_folder")
+                        :WaitForChild("remote")
+                        :WaitForChild("ability_remote")
+                        :FireServer(unpack(args))
+                end
+            end
+        end
+    end
+end)
