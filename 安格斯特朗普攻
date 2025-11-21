@@ -25,7 +25,7 @@ btn.MouseButton1Click:Connect(function()
         if plr ~= LocalPlayer and plr.Character then
             local root = plr.Character:FindFirstChild("HumanoidRootPart")
             if root then
-                if (root.Position - myRoot.Position).Magnitude <= 80 then
+                if (root.Position - myRoot.Position).Magnitude <= 150 then
                     local args = {
                         "Angstrom",
                         "M1",
