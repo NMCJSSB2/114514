@@ -26,7 +26,7 @@ btn.MouseButton1Click:Connect(function()
             local root = plr.Character:FindFirstChild("HumanoidRootPart")
             if root then
                 local distance = (root.Position - myRoot.Position).Magnitude
-                if distance <= 80 then
+                if distance <= 150 then
                     local args = {
                         "TechJacket",
                         "M1",
