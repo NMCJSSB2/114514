@@ -1,0 +1,182 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+local DISTANCE = 15
+local MAX_PER_PAGE = 15
+
+local function IsChinese(player)
+    local locale = player.LocaleId or "en-us"
+    return locale == "zh-cn" or locale == "zh-tw"
+end
+
+local IS_CHINESE = IsChinese(LocalPlayer)
+
+local function CreateInventoryUI(targetPlayer)
+    if not targetPlayer then return end
+
+    if LocalPlayer.PlayerGui:FindFirstChild("InventoryViewer") then
+        LocalPlayer.PlayerGui.InventoryViewer:Destroy()
+    end
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "InventoryViewer"
+    gui.Parent = LocalPlayer.PlayerGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 350, 0, 260)
+    frame.Position = UDim2.new(0.5, -175, 0.6, -130)
+    frame.BackgroundColor3 = Color3.new(0,0,0)
+    frame.BackgroundTransparency = 0.45
+    frame.Parent = gui
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 60, 0, 30)
+    closeBtn.Position = UDim2.new(1, -65, 0, 5)
+    closeBtn.Text = IS_CHINESE and "关闭" or "×"
+    closeBtn.BackgroundColor3 = Color3.new(0,0,0)
+    closeBtn.BackgroundTransparency = 0.45
+    closeBtn.TextColor3 = Color3.new(1,1,1)
+    closeBtn.Parent = frame
+
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, -20, 1, -60)
+    container.Position = UDim2.new(0, 10, 0, 40)
+    container.BackgroundTransparency = 1
+    container.Parent = frame
+
+    local grid = Instance.new("UIGridLayout")
+    grid.CellSize = UDim2.new(0, 60, 0, 60)
+    grid.CellPadding = UDim2.new(0, 6, 0, 6)
+    grid.FillDirection = Enum.FillDirection.Horizontal
+    grid.FillDirectionMaxCells = 5
+    grid.Parent = container
+
+    local pageUp = Instance.new("TextButton")
+    pageUp.Size = UDim2.new(0, 80, 0, 30)
+    pageUp.Position = UDim2.new(0, 10, 1, -35)
+    pageUp.Text = IS_CHINESE and "上一页" or "<"
+    pageUp.BackgroundColor3 = Color3.new(0,0,0)
+    pageUp.BackgroundTransparency = 0.45
+    pageUp.TextColor3 = Color3.new(1,1,1)
+    pageUp.Parent = frame
+
+    local pageDown = Instance.new("TextButton")
+    pageDown.Size = UDim2.new(0, 80, 0, 30)
+    pageDown.Position = UDim2.new(1, -90, 1, -35)
+    pageDown.Text = IS_CHINESE and "下一页" or ">"
+    pageDown.BackgroundColor3 = Color3.new(0,0,0)
+    pageDown.BackgroundTransparency = 0.45
+    pageDown.TextColor3 = Color3.new(1,1,1)
+    pageDown.Parent = frame
+
+    local items = {}
+    if targetPlayer:FindFirstChild("Backpack") then
+        for _, tool in ipairs(targetPlayer.Backpack:GetChildren()) do
+            table.insert(items, tool)
+        end
+    end
+    if targetPlayer.Character then
+        for _, tool in ipairs(targetPlayer.Character:GetChildren()) do
+            if tool:IsA("Tool") then
+                table.insert(items, tool)
+            end
+        end
+    end
+
+    local page = 1
+    local totalPages = math.max(1, math.ceil(#items / MAX_PER_PAGE))
+
+    local function RefreshPage()
+        for _, v in ipairs(container:GetChildren()) do
+            if v:IsA("Frame") then v:Destroy() end
+        end
+
+        local startIdx = (page-1)*MAX_PER_PAGE + 1
+        local endIdx = math.min(page*MAX_PER_PAGE, #items)
+
+        for i = startIdx, endIdx do
+            local tool = items[i]
+            local frameItem = Instance.new("Frame")
+            frameItem.Size = UDim2.new(0, 60, 0, 60)
+            frameItem.BackgroundTransparency = 0.45
+            frameItem.BackgroundColor3 = Color3.new(0,0,0)
+            frameItem.Parent = container
+
+            if tool.TextureId and tool.TextureId ~= "" and tool.TextureId ~= "rbxassetid://0" then
+                local icon = Instance.new("ImageLabel")
+                icon.Size = UDim2.new(1,0,1,0)
+                icon.BackgroundTransparency = 1
+                icon.Image = tool.TextureId
+                icon.Parent = frameItem
+            else
+                local label = Instance.new("TextLabel")
+                label.Size = UDim2.new(1,0,1,0)
+                label.BackgroundTransparency = 1
+                label.TextColor3 = Color3.new(1,1,1)
+                label.TextScaled = true
+                label.Text = tool.Name
+                label.Parent = frameItem
+            end
+        end
+    end
+
+    pageUp.MouseButton1Click:Connect(function()
+        if page > 1 then
+            page -= 1
+            RefreshPage()
+        end
+    end)
+
+    pageDown.MouseButton1Click:Connect(function()
+        if page < totalPages then
+            page += 1
+            RefreshPage()
+        end
+    end)
+
+    closeBtn.MouseButton1Click:Connect(function()
+        gui:Destroy()
+    end)
+
+    RefreshPage()
+end
+
+local function CreateTogglePrompt(targetChar)
+    local head = targetChar:FindFirstChild("Head")
+    if not head then return end
+
+    if head:FindFirstChild("BackpackPrompt") then return head.BackpackPrompt end
+
+    local prompt = Instance.new("ProximityPrompt")
+    prompt.Name = "BackpackPrompt"
+    prompt.ActionText = IS_CHINESE and "打开背包" or "Backpack"
+    prompt.ObjectText = targetChar.Name
+    prompt.MaxActivationDistance = DISTANCE
+    prompt.RequiresLineOfSight = false
+    prompt.Parent = head
+
+    prompt.Triggered:Connect(function(player)
+        if player ~= LocalPlayer then return end
+        local targetPlayer = Players:GetPlayerFromCharacter(targetChar)
+        if targetPlayer then
+            CreateInventoryUI(targetPlayer)
+        end
+    end)
+
+    return prompt
+end
+
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= LocalPlayer and plr.Character then
+        CreateTogglePrompt(plr.Character)
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function(char)
+        if plr ~= LocalPlayer then
+            CreateTogglePrompt(char)
+        end
+    end)
+end)
