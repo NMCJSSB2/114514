@@ -1,137 +1,208 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 local AIFolder = Workspace:WaitForChild("AI")
+
 local AimbotEnabled = false
 local npcRecords = {}
+
 local MaxDistance = 1000
 local FOV = 250
 
 local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
 ScreenGui.ResetOnSpawn = false
 
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 60, 0, 60)
+local ToggleButton = Instance.new("ImageButton")
+ToggleButton.Size = UDim2.new(0, 65, 0, 65)
 ToggleButton.Position = UDim2.new(0, 20, 0, 20)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-ToggleButton.Text = ""
-ToggleButton.BorderSizePixel = 0
+ToggleButton.BackgroundTransparency = 1
+ToggleButton.Image = "rbxassetid://100070358404817"
+ToggleButton.ImageColor3 = Color3.new(1,1,1)
 ToggleButton.Parent = ScreenGui
 
-ToggleButton.MouseButton1Click:Connect(function()
+Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(1,0)
+
+local function playAnimation(on)
+	if on then
+		TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
+			Size = UDim2.new(0, 70, 0, 70),
+			ImageColor3 = Color3.fromRGB(0,170,255)
+		}):Play()
+	else
+		TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
+			Size = UDim2.new(0, 65, 0, 65),
+			ImageColor3 = Color3.new(1,1,1)
+		}):Play()
+	end
+end
+
+local function toggleAimbot()
 	AimbotEnabled = not AimbotEnabled
-	ToggleButton.BackgroundColor3 = AimbotEnabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(80, 80, 80)
+	playAnimation(AimbotEnabled)
+end
+
+ToggleButton.MouseButton1Click:Connect(toggleAimbot)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.Q then
+		toggleAimbot()
+	end
 end)
 
-local function addEnemyBillboard(npc)
-	if not npc or not npc:FindFirstChild("Head") or npcRecords[npc] then return end
-	local head = npc.Head
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = "EnemyTag"
-	billboard.Adornee = head
-	billboard.Size = UDim2.new(0, 100, 0, 40)
-	billboard.AlwaysOnTop = true
-	billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 1, 0)
-	label.BackgroundTransparency = 1
-	label.Text = "敌人"
-	label.Font = Enum.Font.SourceSansBold
-	label.TextSize = 28
-	label.TextColor3 = Color3.fromRGB(255, 0, 0)
-	label.TextStrokeTransparency = 0
-	label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	label.Parent = billboard
-	billboard.Parent = npc
-	npcRecords[npc] = billboard
-end
-
-local function cleanDeadNPCs()
-	for npc, billboard in pairs(npcRecords) do
-		local humanoid = npc:FindFirstChildOfClass("Humanoid")
-		if not npc.Parent or not npc:FindFirstChild("Head") or (humanoid and humanoid.Health <= 0) then
-			if billboard then billboard:Destroy() end
-			npcRecords[npc] = nil
-		end
-	end
-end
-
-local function updateBillboards()
-	cleanDeadNPCs()
-	for _, npc in pairs(AIFolder:GetChildren()) do
-		if npc:IsA("Model") and npc:FindFirstChild("Head") then
-			addEnemyBillboard(npc)
-		end
-	end
-end
-
-local function isVisible(targetHead)
+local function isVisible(targetPart)
 	local origin = Camera.CFrame.Position
-	local direction = targetHead.Position - origin
+	local direction = targetPart.Position - origin
+	
 	local params = RaycastParams.new()
 	params.FilterDescendantsInstances = {LocalPlayer.Character}
 	params.FilterType = Enum.RaycastFilterType.Blacklist
+	
 	local ray = Workspace:Raycast(origin, direction, params)
-	return not ray or ray.Instance:IsDescendantOf(targetHead.Parent)
+	return not ray or ray.Instance:IsDescendantOf(targetPart.Parent)
 end
 
 local function screenDistance(targetPos)
 	local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
 	if onScreen then
-		local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+		local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
 		return (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
 	end
 	return math.huge
 end
 
 local function getTarget()
-	local closestHead
+	local closestPart
 	local closestDist = math.huge
+	
 	for _, npc in pairs(AIFolder:GetChildren()) do
-		if npc:IsA("Model") and npc:FindFirstChild("Head") then
+		if npc:IsA("Model") then
 			local humanoid = npc:FindFirstChildOfClass("Humanoid")
-			local head = npc.Head
 			if humanoid and humanoid.Health > 0 then
-				local distance = (head.Position - Camera.CFrame.Position).Magnitude
-				if distance < MaxDistance and isVisible(head) then
-					local dist = screenDistance(head.Position)
-					if dist <= FOV and dist < closestDist then
-						closestDist = dist
-						closestHead = head
+				
+				local targetPart
+				
+				if npc.Name == "Tarantula" or npc.Name == "Chimera1" then
+					local weakFolder = npc:FindFirstChild("Weakpoints")
+					if weakFolder then
+						targetPart = weakFolder:FindFirstChild("Weakpoint")
+					end
+				else
+					targetPart = npc:FindFirstChild("Head")
+				end
+				
+				if targetPart then
+					local distance = (targetPart.Position - Camera.CFrame.Position).Magnitude
+					
+					if distance < MaxDistance and isVisible(targetPart) then
+						local dist = screenDistance(targetPart.Position)
+						
+						if dist <= FOV and dist < closestDist then
+							closestDist = dist
+							closestPart = targetPart
+						end
 					end
 				end
 			end
 		end
 	end
-	cleanDeadNPCs()
-	return closestHead
+	
+	return closestPart
 end
 
-task.spawn(function()
-	while true do
-		local mech = Workspace:FindFirstChild("Mech_" .. LocalPlayer.Name)
-		if mech and mech:FindFirstChild("Seat") then
-			local seat = mech.Seat
-			for _, child in pairs(seat:GetChildren()) do
-				if child:IsA("ProximityPrompt") then
-					child.MaxActivationDistance = 60
-					child.Enabled = true
-				end
+local function addEnemyBillboard(npc)
+	if npcRecords[npc] then return end
+	
+	local targetPart
+	
+	if npc.Name == "Tarantula" or npc.Name == "Chimera1" then
+		local weakFolder = npc:FindFirstChild("Weakpoints")
+		if weakFolder then
+			targetPart = weakFolder:FindFirstChild("Weakpoint")
+			if targetPart then
+				targetPart.Size = Vector3.new(3,3,3)
 			end
 		end
-		task.wait(1)
+	else
+		targetPart = npc:FindFirstChild("Head")
 	end
-end)
+	
+	if not targetPart then return end
+	
+	local billboard = Instance.new("BillboardGui")
+	billboard.Adornee = targetPart
+	billboard.Size = UDim2.new(0,100,0,40)
+	billboard.AlwaysOnTop = true
+	billboard.StudsOffset = Vector3.new(0,2.5,0)
+	
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1,0,1,0)
+	label.BackgroundTransparency = 1
+	label.TextStrokeTransparency = 0
+	label.Font = Enum.Font.SourceSansBold
+	label.TextSize = 25
+	label.Parent = billboard
+	
+	billboard.Parent = npc
+	
+	npcRecords[npc] = {
+		gui = billboard,
+		label = label,
+		part = targetPart
+	}
+end
+
+local function updateBillboards()
+	for npc, data in pairs(npcRecords) do
+		if not npc.Parent then
+			data.gui:Destroy()
+			npcRecords[npc] = nil
+		else
+			local humanoid = npc:FindFirstChildOfClass("Humanoid")
+			local dead = humanoid and humanoid.Health <= 0
+			local visible = data.part and isVisible(data.part)
+			
+			if npc.Name == "Tarantula" then
+				data.label.Text = "机械蛛"
+				data.label.TextColor3 = Color3.fromRGB(0,150,255)
+			elseif npc.Name == "Chimera1" then
+				data.label.Text = "机械兵"
+				data.label.TextColor3 = Color3.fromRGB(255,140,0)
+			else
+				data.label.Text = "敌人"
+				data.label.TextColor3 = Color3.fromRGB(255,0,0)
+			end
+			
+			if dead then
+				data.label.TextColor3 = Color3.fromRGB(0,0,0)
+			elseif not visible then
+				data.label.TextColor3 = Color3.fromRGB(120,120,120)
+			end
+		end
+	end
+	
+	for _, npc in pairs(AIFolder:GetChildren()) do
+		if npc:IsA("Model") then
+			addEnemyBillboard(npc)
+		end
+	end
+end
 
 RunService.RenderStepped:Connect(function()
 	updateBillboards()
+	
 	if AimbotEnabled then
-		local targetHead = getTarget()
-		if targetHead then
-			Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
+		local target = getTarget()
+		if target then
+			local camPos = Camera.CFrame.Position
+			local newCF = CFrame.lookAt(camPos, target.Position)
+			Camera.CFrame = Camera.CFrame:Lerp(newCF, 0.6)
 		end
 	end
 end)
