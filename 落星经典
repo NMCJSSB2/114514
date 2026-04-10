@@ -19,53 +19,103 @@ local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"
 ScreenGui.ResetOnSpawn = false
 
 local ToggleButton = Instance.new("ImageButton")
-ToggleButton.Size = UDim2.new(0, 65, 0, 65)
-ToggleButton.Position = UDim2.new(0, 20, 0, 20)
+ToggleButton.Size = UDim2.new(0, 100, 0, 40)
+ToggleButton.Position = UDim2.new(0, 10, 0, 10)
 ToggleButton.BackgroundTransparency = 1
-ToggleButton.Image = "rbxassetid://100070358404817"
-ToggleButton.ImageColor3 = Color3.new(1,1,1)
+ToggleButton.Image = "rbxassetid://136268399740002"
+ToggleButton.ImageColor3 = Color3.fromRGB(255,255,255)
 ToggleButton.Parent = ScreenGui
 
-Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(1,0)
+local originalPos = ToggleButton.Position
+local pressed = false
 
-local function playAnimation(on)
-	if on then
-		TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
-			Size = UDim2.new(0, 70, 0, 70),
-			ImageColor3 = Color3.fromRGB(0,170,255)
-		}):Play()
+local function updateColor()
+	if AimbotEnabled then
+		ToggleButton.ImageColor3 = Color3.fromRGB(0,170,255)
 	else
-		TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
-			Size = UDim2.new(0, 65, 0, 65),
-			ImageColor3 = Color3.new(1,1,1)
-		}):Play()
+		ToggleButton.ImageColor3 = Color3.fromRGB(255,255,255)
 	end
 end
 
-local function toggleAimbot()
-	AimbotEnabled = not AimbotEnabled
-	playAnimation(AimbotEnabled)
-end
+ToggleButton.MouseButton1Down:Connect(function()
+	if pressed then return end
+	pressed = true
+	TweenService:Create(ToggleButton, TweenInfo.new(0.08), {
+		Position = originalPos + UDim2.new(0,10,0,0)
+	}):Play()
+end)
 
-ToggleButton.MouseButton1Click:Connect(toggleAimbot)
+ToggleButton.MouseButton1Up:Connect(function()
+	if not pressed then return end
+	pressed = false
+	AimbotEnabled = not AimbotEnabled
+	
+	TweenService:Create(ToggleButton, TweenInfo.new(0.08), {
+		Position = originalPos
+	}):Play()
+	
+	updateColor()
+end)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	if input.KeyCode == Enum.KeyCode.Q then
-		toggleAimbot()
+		AimbotEnabled = not AimbotEnabled
+		updateColor()
 	end
 end)
 
 local function isVisible(targetPart)
 	local origin = Camera.CFrame.Position
-	local direction = targetPart.Position - origin
+	local direction = (targetPart.Position - origin)
+	local distance = direction.Magnitude
+	direction = direction.Unit
+	
+	local mech = Workspace:FindFirstChild("Mech_" .. LocalPlayer.Name)
 	
 	local params = RaycastParams.new()
-	params.FilterDescendantsInstances = {LocalPlayer.Character}
 	params.FilterType = Enum.RaycastFilterType.Blacklist
 	
-	local ray = Workspace:Raycast(origin, direction, params)
-	return not ray or ray.Instance:IsDescendantOf(targetPart.Parent)
+	local ignoreList = {LocalPlayer.Character}
+	if mech then
+		table.insert(ignoreList, mech)
+	end
+	
+	params.FilterDescendantsInstances = ignoreList
+	
+	local currentOrigin = origin
+	local remainingDistance = distance
+	
+	for i = 1, 5 do
+		local ray = Workspace:Raycast(currentOrigin, direction * remainingDistance, params)
+		
+		if not ray then
+			return true
+		end
+		
+		local hit = ray.Instance
+		
+		if hit:IsDescendantOf(targetPart.Parent) then
+			return true
+		end
+		
+		if hit.Transparency >= 0.9 then
+			table.insert(ignoreList, hit)
+			params.FilterDescendantsInstances = ignoreList
+			
+			local hitPos = ray.Position
+			local traveled = (hitPos - currentOrigin).Magnitude
+			
+			remainingDistance -= traveled
+			currentOrigin = hitPos + direction * 0.1
+			
+			continue
+		end
+		
+		return false
+	end
+	
+	return false
 end
 
 local function screenDistance(targetPos)
@@ -88,11 +138,15 @@ local function getTarget()
 				
 				local targetPart
 				
-				if npc.Name == "Tarantula" or npc.Name == "Chimera1" then
+				if npc.Name == "Tarantula" or npc.Name == "Chimera1" or npc.Name == "Chimera2" then
 					local weakFolder = npc:FindFirstChild("Weakpoints")
 					if weakFolder then
 						targetPart = weakFolder:FindFirstChild("Weakpoint")
 					end
+					
+				elseif npc.Name == "Dracula" then
+					targetPart = npc:FindFirstChild("HumanoidRootPart")
+					
 				else
 					targetPart = npc:FindFirstChild("Head")
 				end
@@ -121,7 +175,7 @@ local function addEnemyBillboard(npc)
 	
 	local targetPart
 	
-	if npc.Name == "Tarantula" or npc.Name == "Chimera1" then
+	if npc.Name == "Tarantula" or npc.Name == "Chimera1" or npc.Name == "Chimera2" then
 		local weakFolder = npc:FindFirstChild("Weakpoints")
 		if weakFolder then
 			targetPart = weakFolder:FindFirstChild("Weakpoint")
@@ -129,6 +183,10 @@ local function addEnemyBillboard(npc)
 				targetPart.Size = Vector3.new(3,3,3)
 			end
 		end
+		
+	elseif npc.Name == "Dracula" then
+		targetPart = npc:FindFirstChild("HumanoidRootPart")
+		
 	else
 		targetPart = npc:FindFirstChild("Head")
 	end
@@ -171,9 +229,19 @@ local function updateBillboards()
 			if npc.Name == "Tarantula" then
 				data.label.Text = "机械蛛"
 				data.label.TextColor3 = Color3.fromRGB(0,150,255)
+				
 			elseif npc.Name == "Chimera1" then
-				data.label.Text = "机械兵"
+				data.label.Text = "机枪兵"
 				data.label.TextColor3 = Color3.fromRGB(255,140,0)
+				
+			elseif npc.Name == "Chimera2" then
+				data.label.Text = "机枪兵2"
+				data.label.TextColor3 = Color3.fromRGB(255,140,0)
+				
+			elseif npc.Name == "Dracula" then
+				data.label.Text = "战争机器"
+				data.label.TextColor3 = Color3.fromRGB(139,0,0)
+				
 			else
 				data.label.Text = "敌人"
 				data.label.TextColor3 = Color3.fromRGB(255,0,0)
