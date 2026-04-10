@@ -1,0 +1,96 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local button = Instance.new("ImageButton")
+button.Size = UDim2.new(0,100,0,40)
+button.Position = UDim2.new(0.9,0,0,0)
+button.BackgroundTransparency = 1
+button.Image = "rbxassetid://76054856434002"
+button.ImageColor3 = Color3.new(1,1,1)
+button.Parent = gui
+
+local TweenService = game:GetService("TweenService")
+
+local function tween(obj,props,time)
+	TweenService:Create(obj,TweenInfo.new(time,Enum.EasingStyle.Sine),props):Play()
+end
+
+button.MouseButton1Down:Connect(function()
+	tween(button,{Position = UDim2.new(0.9,-10,0,0)},0.1)
+	tween(button,{ImageColor3 = Color3.fromRGB(0,170,255)},0.15)
+
+	local args = {
+		workspace:WaitForChild("Mech_"..player.Name),
+		"Assault"
+	}
+
+	game:GetService("ReplicatedStorage")
+	:WaitForChild("MechStorage")
+	:WaitForChild("Resources")
+	:WaitForChild("Remotes")
+	:WaitForChild("playMechEntry")
+	:FireServer(unpack(args))
+end)
+
+button.MouseButton1Up:Connect(function()
+	tween(button,{Position = UDim2.new(0.9,0,0,0)},0.1)
+	tween(button,{ImageColor3 = Color3.new(1,1,1)},0.15)
+end)
+
+player.Chatted:Connect(function(msg)
+
+	local lower = string.lower(msg)
+
+	if string.sub(lower,-2) == "_m" then
+		
+		local name = string.sub(msg,1,#msg-2)
+		
+		for _,plr in ipairs(Players:GetPlayers()) do
+			if string.find(string.lower(plr.Name),string.lower(name)) 
+			or string.find(string.lower(plr.DisplayName),string.lower(name)) then
+				
+				local args = {
+					plr
+				}
+				
+				game:GetService("ReplicatedStorage")
+				:WaitForChild("MechStorage")
+				:WaitForChild("Resources")
+				:WaitForChild("Remotes")
+				:WaitForChild("DeployEvent")
+				:FireServer(unpack(args))
+				
+				break
+			end
+		end
+		
+	elseif string.sub(lower,-2) == "_t" then
+		
+		local name = string.sub(msg,1,#msg-2)
+		
+		for _,plr in ipairs(Players:GetPlayers()) do
+			if string.find(string.lower(plr.Name),string.lower(name)) 
+			or string.find(string.lower(plr.DisplayName),string.lower(name)) then
+				
+				local args = {
+					plr
+				}
+				
+				game:GetService("ReplicatedStorage")
+				:WaitForChild("MechStorage")
+				:WaitForChild("Resources")
+				:WaitForChild("Remotes")
+				:WaitForChild("ExitMech")
+				:FireServer(unpack(args))
+				
+				break
+			end
+		end
+		
+	end
+
+end)
