@@ -30,11 +30,17 @@ local originalPos = ToggleButton.Position
 local pressed = false
 
 local function updateColor()
+	local targetColor
 	if AimbotEnabled then
-		ToggleButton.ImageColor3 = Color3.fromRGB(0,170,255)
+		targetColor = Color3.fromRGB(0,170,255)
 	else
-		ToggleButton.ImageColor3 = Color3.fromRGB(255,255,255)
+		targetColor = Color3.fromRGB(255,255,255)
 	end
+	TweenService:Create(
+		ToggleButton,
+		TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ImageColor3 = targetColor}
+	):Play()
 end
 
 ToggleButton.MouseButton1Down:Connect(function()
@@ -49,11 +55,9 @@ ToggleButton.MouseButton1Up:Connect(function()
 	if not pressed then return end
 	pressed = false
 	AimbotEnabled = not AimbotEnabled
-	
 	TweenService:Create(ToggleButton, TweenInfo.new(0.08), {
 		Position = originalPos
 	}):Play()
-	
 	updateColor()
 end)
 
@@ -204,7 +208,7 @@ local function addEnemyBillboard(npc)
 	label.BackgroundTransparency = 1
 	label.TextStrokeTransparency = 0
 	label.Font = Enum.Font.SourceSansBold
-	label.TextSize = 25
+	label.TextSize = 23
 	label.Parent = billboard
 	
 	billboard.Parent = npc
@@ -229,19 +233,15 @@ local function updateBillboards()
 			if npc.Name == "Tarantula" then
 				data.label.Text = "机械蛛"
 				data.label.TextColor3 = Color3.fromRGB(0,150,255)
-				
 			elseif npc.Name == "Chimera1" then
 				data.label.Text = "机枪兵"
 				data.label.TextColor3 = Color3.fromRGB(255,140,0)
-				
 			elseif npc.Name == "Chimera2" then
 				data.label.Text = "机枪兵2"
 				data.label.TextColor3 = Color3.fromRGB(255,140,0)
-				
 			elseif npc.Name == "Dracula" then
 				data.label.Text = "战争机器"
 				data.label.TextColor3 = Color3.fromRGB(139,0,0)
-				
 			else
 				data.label.Text = "敌人"
 				data.label.TextColor3 = Color3.fromRGB(255,0,0)
