@@ -12,6 +12,7 @@ local SmoothSpeed = 0.7
 local enabled = false
 
 local gui = Instance.new("ScreenGui")
+gui.ResetOnSpawn = false
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local button = Instance.new("ImageButton")
