@@ -43,53 +43,18 @@ end)
 
 player.Chatted:Connect(function(msg)
 
-	local lower = string.lower(msg)
-
-	if string.sub(lower,-2) == "_m" then
+	if string.lower(msg) == "m" then
 		
-		local name = string.sub(msg,1,#msg-2)
+		local args = {
+			player
+		}
 		
-		for _,plr in ipairs(Players:GetPlayers()) do
-			if string.find(string.lower(plr.Name),string.lower(name)) 
-			or string.find(string.lower(plr.DisplayName),string.lower(name)) then
-				
-				local args = {
-					plr
-				}
-				
-				game:GetService("ReplicatedStorage")
-				:WaitForChild("MechStorage")
-				:WaitForChild("Resources")
-				:WaitForChild("Remotes")
-				:WaitForChild("DeployEvent")
-				:FireServer(unpack(args))
-				
-				break
-			end
-		end
-		
-	elseif string.sub(lower,-2) == "_t" then
-		
-		local name = string.sub(msg,1,#msg-2)
-		
-		for _,plr in ipairs(Players:GetPlayers()) do
-			if string.find(string.lower(plr.Name),string.lower(name)) 
-			or string.find(string.lower(plr.DisplayName),string.lower(name)) then
-				
-				local args = {
-					plr
-				}
-				
-				game:GetService("ReplicatedStorage")
-				:WaitForChild("MechStorage")
-				:WaitForChild("Resources")
-				:WaitForChild("Remotes")
-				:WaitForChild("ExitMech")
-				:FireServer(unpack(args))
-				
-				break
-			end
-		end
+		game:GetService("ReplicatedStorage")
+		:WaitForChild("MechStorage")
+		:WaitForChild("Resources")
+		:WaitForChild("Remotes")
+		:WaitForChild("DeployEvent")
+		:FireServer(unpack(args))
 		
 	end
 
