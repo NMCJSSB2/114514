@@ -208,7 +208,7 @@ local function addEnemyBillboard(npc)
 	label.BackgroundTransparency = 1
 	label.TextStrokeTransparency = 0
 	label.Font = Enum.Font.SourceSansBold
-	label.TextSize = 23
+	label.TextSize = 20
 	label.Parent = billboard
 	
 	billboard.Parent = npc
