@@ -85,6 +85,10 @@ local function isVisible(targetPart)
 		table.insert(ignoreList, mech)
 	end
 	
+	if targetPart.Parent and targetPart.Parent.Name == "Dracula" then
+		table.insert(ignoreList, targetPart.Parent)
+	end
+	
 	params.FilterDescendantsInstances = ignoreList
 	
 	local currentOrigin = origin
@@ -142,7 +146,7 @@ local function getTarget()
 				
 				local targetPart
 				
-				if npc.Name == "Tarantula" or npc.Name == "Chimera1" or npc.Name == "Chimera2" then
+				if npc.Name == "Tarantula" or npc.Name == "Chimera1" or npc.Name == "Chimera2" or npc.Name == "Cerberus" then
 					local weakFolder = npc:FindFirstChild("Weakpoints")
 					if weakFolder then
 						targetPart = weakFolder:FindFirstChild("Weakpoint")
@@ -179,7 +183,7 @@ local function addEnemyBillboard(npc)
 	
 	local targetPart
 	
-	if npc.Name == "Tarantula" or npc.Name == "Chimera1" or npc.Name == "Chimera2" then
+	if npc.Name == "Tarantula" or npc.Name == "Chimera1" or npc.Name == "Chimera2" or npc.Name == "Cerberus" then
 		local weakFolder = npc:FindFirstChild("Weakpoints")
 		if weakFolder then
 			targetPart = weakFolder:FindFirstChild("Weakpoint")
@@ -232,15 +236,18 @@ local function updateBillboards()
 			
 			if npc.Name == "Tarantula" then
 				data.label.Text = "机械蛛"
-				data.label.TextColor3 = Color3.fromRGB(0,150,255)
+				data.label.TextColor3 = Color3.fromRGB(80,120,80)
 			elseif npc.Name == "Chimera1" then
 				data.label.Text = "机枪兵"
 				data.label.TextColor3 = Color3.fromRGB(255,140,0)
 			elseif npc.Name == "Chimera2" then
-				data.label.Text = "机枪兵2"
-				data.label.TextColor3 = Color3.fromRGB(255,140,0)
+				data.label.Text = "机枪兵Max"
+				data.label.TextColor3 = Color3.fromRGB(255,80,0)
 			elseif npc.Name == "Dracula" then
 				data.label.Text = "战争机器"
+				data.label.TextColor3 = Color3.fromRGB(139,0,0)
+			elseif npc.Name == "Cerberus" then
+				data.label.Text = "巨型机甲"
 				data.label.TextColor3 = Color3.fromRGB(139,0,0)
 			else
 				data.label.Text = "敌人"
