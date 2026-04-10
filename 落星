@@ -56,7 +56,7 @@ rightText.Parent = rightButton
 leftButton.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
 	loadstring(game:HttpGet('https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E8%90%BD%E6%98%9F%E5%AF%B9%E6%88%98'))()
-	loadstring(game:HttpGet('https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/interactive'))()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E8%90%BD%E6%98%9F%E6%9C%BA%E7%94%B2'))()
 end)
 
 -- 点击右边按钮
