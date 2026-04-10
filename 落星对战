@@ -1,17 +1,50 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 local FOV = 250
-local MaxDistance = 1000
 local SmoothSpeed = 0.7
 
-local function isVisible(targetHead)
-	-- 去掉墙壁检测，直接返回 true
-	return true
+local enabled = false
+
+local gui = Instance.new("ScreenGui")
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local button = Instance.new("ImageButton")
+button.Size = UDim2.new(0,100,0,40)
+button.Position = UDim2.new(0,10,0,10)
+button.BackgroundTransparency = 1
+button.Image = "rbxassetid://136268399740002"
+button.ImageColor3 = Color3.new(1,1,1)
+button.Parent = gui
+
+local originalPos = button.Position
+
+local function tween(obj,props,time)
+	TweenService:Create(obj,TweenInfo.new(time,Enum.EasingStyle.Sine),props):Play()
 end
+
+button.MouseButton1Down:Connect(function()
+	tween(button,{Position = originalPos + UDim2.new(0,10,0,0)},0.1)
+end)
+
+button.MouseButton1Up:Connect(function()
+	tween(button,{Position = originalPos},0.1)
+end)
+
+button.MouseButton1Click:Connect(function()
+	enabled = not enabled
+	
+	if enabled then
+		tween(button,{ImageColor3 = Color3.fromRGB(0,170,255)},0.15)
+	else
+		tween(button,{ImageColor3 = Color3.new(1,1,1)},0.15)
+	end
+end)
 
 local function screenDistance(targetPos)
 	local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
@@ -25,18 +58,19 @@ end
 local function getTarget()
 	local closestHead
 	local closestDist = math.huge
+	
 	for _, player in pairs(Players:GetPlayers()) do
 		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
 			local head = player.Character.Head
-			if isVisible(head) then
-				local dist = screenDistance(head.Position)
-				if dist <= FOV and dist < closestDist then
-					closestDist = dist
-					closestHead = head
-				end
+			local dist = screenDistance(head.Position)
+			
+			if dist <= FOV and dist < closestDist then
+				closestDist = dist
+				closestHead = head
 			end
 		end
 	end
+	
 	return closestHead
 end
 
@@ -47,6 +81,8 @@ local function smoothLookAt(currentCFrame, targetPos)
 end
 
 RunService.RenderStepped:Connect(function()
+	if not enabled then return end
+	
 	local targetHead = getTarget()
 	if targetHead then
 		Camera.CFrame = smoothLookAt(Camera.CFrame, targetHead.Position)
