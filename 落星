@@ -64,5 +64,5 @@ rightButton.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
 	loadstring(game:HttpGet('https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E8%90%BD%E6%98%9F%E7%BB%8F%E5%85%B8'))()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E8%90%BD%E6%98%9F%E6%9C%BA%E7%94%B2"))()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E8%90%BD%E6%98%9F%E5%88%B7%E9%92%B1"))()(
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E8%90%BD%E6%98%9F%E5%88%B7%E9%92%B1"))()
 end)
