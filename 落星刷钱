@@ -1,0 +1,237 @@
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local runService = game:GetService("RunService")
+local tweenService = game:GetService("TweenService")
+local lighting = game:GetService("Lighting")
+
+-------------------------------------------------
+-- UI
+-------------------------------------------------
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "EffectGui"
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+local dark = Instance.new("Frame")
+dark.Size = UDim2.new(1,0,1,0)
+dark.BackgroundColor3 = Color3.new(0,0,0)
+dark.BackgroundTransparency = 1
+dark.BorderSizePixel = 0
+dark.Parent = gui
+
+local image = Instance.new("ImageLabel")
+image.Size = UDim2.new(0,200,0,100)
+image.Position = UDim2.new(0,0,0,0)
+image.BackgroundTransparency = 1
+image.Image = "rbxassetid://106375883709912"
+image.ImageTransparency = 1
+image.Parent = gui
+
+-------------------------------------------------
+-- 模糊
+-------------------------------------------------
+
+local blur = Instance.new("BlurEffect")
+blur.Size = 0
+blur.Parent = lighting
+
+-------------------------------------------------
+-- Remote（激光）
+-------------------------------------------------
+
+local remote = game:GetService("ReplicatedStorage")
+	:WaitForChild("Minigames")
+	:WaitForChild("MinigameEvents")
+	:WaitForChild("AntennaMission")
+	:WaitForChild("laserEnabled")
+
+local antenna = workspace:WaitForChild("Antennas"):WaitForChild("Antenna")
+
+-------------------------------------------------
+-- Remote（任务）
+-------------------------------------------------
+
+local missionRemote = game:GetService("ReplicatedStorage")
+	:WaitForChild("GameEvents")
+	:WaitForChild("RemoteEvents")
+	:WaitForChild("UpdateGameMission")
+
+-------------------------------------------------
+-- 状态
+-------------------------------------------------
+
+local enabled = false
+local eUsed = false -- ⭐ e只执行一次
+
+-------------------------------------------------
+-- Tween函数
+-------------------------------------------------
+
+local function tween(obj, goal, time)
+	tweenService:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), goal):Play()
+end
+
+-------------------------------------------------
+-- 弹跳变量
+-------------------------------------------------
+
+local velocity = Vector2.new(300,200)
+local pixelPos = nil
+
+-------------------------------------------------
+-- 工具函数（防卡边）
+-------------------------------------------------
+
+local function randomDir()
+	local dirs = {
+		Vector2.new(1,1),
+		Vector2.new(-1,1),
+		Vector2.new(1,-1),
+		Vector2.new(-1,-1),
+	}
+	return dirs[math.random(1,#dirs)].Unit
+end
+
+local function fixVelocity(v)
+	local min = 120
+
+	if math.abs(v.X) < min then
+		v = Vector2.new((v.X >= 0 and 1 or -1) * min, v.Y)
+	end
+
+	if math.abs(v.Y) < min then
+		v = Vector2.new(v.X, (v.Y >= 0 and 1 or -1) * min)
+	end
+
+	return v
+end
+
+local function randomBounce(v)
+	local angle = math.rad(math.random(-25,25))
+	local cos = math.cos(angle)
+	local sin = math.sin(angle)
+
+	return Vector2.new(
+		v.X * cos - v.Y * sin,
+		v.X * sin + v.Y * cos
+	)
+end
+
+-------------------------------------------------
+-- 开启
+-------------------------------------------------
+
+local function enableEffect()
+	if enabled then return end
+	enabled = true
+
+	local cam = workspace.CurrentCamera
+	local screenSize = cam.ViewportSize
+
+	pixelPos = Vector2.new(
+		screenSize.X/2 - 100,
+		screenSize.Y/2 - 50
+	)
+
+	velocity = fixVelocity(randomDir() * 300)
+
+	image.ImageTransparency = 0
+
+	tween(dark, {BackgroundTransparency = 0.5}, 0.5)
+	tween(blur, {Size = 15}, 0.5)
+end
+
+-------------------------------------------------
+-- 关闭
+-------------------------------------------------
+
+local function disableEffect()
+	if not enabled then return end
+	enabled = false
+
+	tween(dark, {BackgroundTransparency = 1}, 0.5)
+	tween(image, {ImageTransparency = 1}, 0.5)
+	tween(blur, {Size = 0}, 0.5)
+end
+
+-------------------------------------------------
+-- 聊天控制
+-------------------------------------------------
+
+player.Chatted:Connect(function(msg)
+	msg = msg:lower()
+
+	if msg == "z" then
+		enableEffect()
+
+	elseif msg == "x" then
+		disableEffect()
+
+	elseif msg == "e" then
+		if eUsed then return end -- ⭐ 防重复
+		
+		eUsed = true
+		
+		local args = {"communications"}
+		missionRemote:FireServer(unpack(args))
+	end
+end)
+
+-------------------------------------------------
+-- 主循环
+-------------------------------------------------
+
+runService.RenderStepped:Connect(function(dt)
+
+	if not enabled then return end
+
+	local cam = workspace.CurrentCamera
+	local screenSize = cam.ViewportSize
+	local imgSize = image.AbsoluteSize
+
+	pixelPos += velocity * dt
+
+	local hitX = false
+	local hitY = false
+
+	-- 左右
+	if pixelPos.X <= 0 then
+		pixelPos = Vector2.new(0, pixelPos.Y)
+		hitX = true
+	elseif pixelPos.X + imgSize.X >= screenSize.X then
+		pixelPos = Vector2.new(screenSize.X - imgSize.X, pixelPos.Y)
+		hitX = true
+	end
+
+	-- 上下
+	if pixelPos.Y <= 0 then
+		pixelPos = Vector2.new(pixelPos.X, 0)
+		hitY = true
+	elseif pixelPos.Y + imgSize.Y >= screenSize.Y then
+		pixelPos = Vector2.new(pixelPos.X, screenSize.Y - imgSize.Y)
+		hitY = true
+	end
+
+	-- 反弹
+	if hitX or hitY then
+		
+		if hitX then
+			velocity = Vector2.new(-velocity.X, velocity.Y)
+		end
+		
+		if hitY then
+			velocity = Vector2.new(velocity.X, -velocity.Y)
+		end
+
+		velocity = randomBounce(velocity)
+		velocity = fixVelocity(velocity)
+	end
+
+	image.Position = UDim2.new(0, pixelPos.X, 0, pixelPos.Y)
+
+	-- 每帧触发
+	remote:FireServer(antenna)
+
+end)
