@@ -22,7 +22,7 @@ dark.BorderSizePixel = 0
 dark.Parent = gui
 
 local image = Instance.new("ImageLabel")
-image.Size = UDim2.new(0,200,0,100)
+image.Size = UDim2.new(0,400,0,200)
 image.Position = UDim2.new(0,0,0,0)
 image.BackgroundTransparency = 1
 image.Image = "rbxassetid://106375883709912"
