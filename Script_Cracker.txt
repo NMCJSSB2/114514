@@ -1,0 +1,281 @@
+-- ====================================================================================
+-- You can write the link here for environments without executors.
+-- If this remains empty, the full-screen "Enter Your Url" box will appear.
+local MANUAL_URL = "" 
+-- ====================================================================================
+
+local lIllIlllII = 16383
+
+local function lIIlIIllIl(llllIIll11, llIlIIllIl, llIlIlIIll, llIllIllII)
+    local function llIlIIlIlI(lllIIlIIll, lllIllIllI)
+        if llIlIIllIl then
+            llIlIIllIl.Text = lllIIlIIll
+            llIlIIllIl.TextColor3 = lllIllIllI or Color3.fromRGB(255, 255, 255)
+        end
+    end
+
+    if llIllIllII then llIllIllII.Text = string.char(80, 82, 79, 67, 69, 83, 83, 73, 78, 71) end
+    llIlIIlIlI(string.char(70, 101, 116, 99, 104, 105, 110, 103, 32, 100, 97, 116, 97, 32, 102, 114, 111, 109, 32, 85, 82, 76, 46, 46, 46), Color3.fromRGB(255, 255, 0))
+
+    local l_success, l_content = pcall(function()
+        if game.HttpGet then
+            return game:HttpGet(llllIIll11)
+        else
+            return game:GetService(string.char(72, 116, 116, 112, 83, 101, 114, 118, 105, 99, 101)):GetAsync(llllIIll11)
+        end
+    end)
+
+    if l_success and l_content then
+        local lIllIlIlIl = string.char(68, 101, 111, 98, 102, 117, 115, 99, 97, 116, 101, 100, 95) .. os.time() .. string.char(46, 108, 117, 97)
+        
+        local l_fileSuccess, l_fileError = pcall(function()
+            if writefile then
+                writefile(lIllIlIlIl, l_content)
+                return true
+            else
+                return false
+            end
+        end)
+
+        if l_fileSuccess then
+            if llIllIllII then llIllIllII.Text = string.char(83, 85, 67, 67, 69, 83, 83, 33) end
+            llIlIIlIlI(string.char(83, 97, 118, 101, 100, 32, 97, 115, 58, 32) .. lIllIlIlIl, Color3.fromRGB(0, 255, 120))
+        else
+            if llIllIllII then llIllIllII.Text = string.char(78, 79, 84, 73, 67, 69) end
+            llIlIIlIlI(string.char(119, 114, 105, 116, 101, 102, 105, 108, 101, 32, 110, 111, 116, 32, 115, 117, 112, 112, 111, 114, 116, 101, 100, 33, 32, 67, 104, 101, 99, 107, 32, 67, 111, 110, 115, 111, 108, 101, 32, 40, 70, 57, 41), Color3.fromRGB(255, 150, 0))
+        end
+
+        local lllIIlIlIl = #l_content
+        local llIlllIIll = 1
+        
+        print(string.char(10, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 32, 91, 32, 67, 72, 85, 78, 75, 69, 68, 32, 83, 67, 82, 73, 80, 84, 32, 79, 85, 84, 80, 85, 84, 32, 83, 84, 65, 82, 84, 32, 93, 32, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61))
+        for i = 1, lllIIlIlIl, lIllIlllII do
+            local l_chunk = l_content:sub(i, i + lIllIlllII - 1)
+            print(string.char(10, 45, 45, 45, 32, 91, 32, 83, 67, 82, 73, 80, 84, 32, 80, 65, 82, 116, 32) .. llIlllIIll .. string.char(32, 93, 32, 45, 45, 45))
+            print(l_chunk)
+            llIlllIIll = llIlllIIll + 1
+        end
+        print(string.char(10, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 32, 91, 32, 67, 72, 85, 78, 75, 69, 68, 32, 83, 67, 82, 73, 80, 84, 32, 79, 85, 84, 80, 85, 84, 32, 69, 77, 68, 32, 93, 32, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 10))
+        
+        task.wait(10)
+        if llIlIlIIll then llIlIlIIll:Destroy() end
+    else
+        if llIllIllII then llIllIllII.Text = string.char(69, 82, 82, 79, 82, 33) end
+        llIlIIlIlI(string.char(70, 97, 105, 108, 101, 100, 32, 116, 111, 32, 102, 101, 116, 99, 104, 32, 100, 97, 116, 97, 46, 32, 73, 110, 118, 97, 108, 105, 100, 32, 108, 105, 110, 107, 33), Color3.fromRGB(255, 50, 50))
+        task.wait(5)
+        if llIlIlIIll then llIlIlIIll:Destroy() end
+    end
+end
+
+local function lIlllIIlll(textLabel, fullText, delayTime)
+    textLabel.Text = ""
+    for i = 1, #fullText do
+        if not textLabel or not textLabel.Parent or not textLabel.Parent.Parent or not textLabel.Parent.Parent.Visible then 
+            break 
+        end
+        textLabel.Text = string.sub(fullText, 1, i)
+        task.wait(delayTime or 0.018)
+    end
+end
+
+local function llIIlllIIl()
+    local lIIlIllIll = game:GetService(string.char(80, 108, 97, 121, 101, 114, 115))
+    local lllIlllIll = lIIlIllIll.LocalPlayer
+    local lIllIIlIIl = lllIlllIll:WaitForChild(string.char(80, 108, 97, 121, 101, 114, 71, 117, 105))
+
+    if lIllIIlIIl:FindFirstChild(string.char(85, 114, 108, 70, 101, 116, 99, 104, 71, 117, 105)) then
+        lIllIIlIIl[string.char(85, 114, 108, 70, 101, 116, 99, 104, 71, 117, 105)]:Destroy()
+    end
+
+    local llIlIlIIll = Instance.new(string.char(83, 99, 114, 101, 101, 110, 71, 117, 105))
+    llIlIlIIll.Name = string.char(85, 114, 108, 70, 101, 116, 99, 104, 71, 117, 105)
+    llIlIlIIll.ResetOnSpawn = false
+    llIlIlIIll.IgnoreGuiInset = true 
+    llIlIlIIll.Parent = lIllIIlIIl
+
+    local lIIllIIlII = Instance.new(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+    lIIllIIlII.Name = string.char(67, 108, 111, 115, 101, 66, 117, 116, 116, 111, 110)
+    lIIllIIlII.Size = UDim2.new(0, 45, 0, 45)
+    lIIllIIlII.Position = UDim2.new(1, -60, 0, 15)
+    lIIllIIlII.BackgroundColor3 = Color3.fromRGB(220, 40, 40) 
+    lIIllIIlII.Text = string.char(88)
+    lIIllIIlII.TextColor3 = Color3.fromRGB(255, 255, 255) 
+    lIIllIIlII.Font = Enum.Font["SourceSansBold"]
+    lIIllIIlII.TextSize = 22
+    lIIllIIlII.ZIndex = 10 
+    lIIllIIlII.Parent = llIlIlIIll
+
+    lIIllIIlII.MouseButton1Click:Connect(function()
+        llIlIlIIll:Destroy() 
+    end)
+
+    local lIlllllIIl = Instance.new(string.char(70, 114, 97, 109, 101))
+    lIlllllIIl.Name = string.char(84, 117, 116, 111, 114, 105, 97, 108, 70, 114, 97, 109, 101)
+    lIlllllIIl.Size = UDim2.new(1, 0, 1, 0) 
+    lIlllllIIl.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    lIlllllIIl.BorderSizePixel = 0
+    lIlllllIIl.Active = true
+    lIlllllIIl.Parent = llIlIlIIll
+
+    local llIIllIIlI = Instance.new(string.char(70, 114, 97, 109, 101))
+    llIIllIIlI.Size = UDim2.new(0, 560, 0, 420)
+    llIIllIIlI.Position = UDim2.new(0.5, -280, 0.5, -210)
+    llIIllIIlI.BackgroundTransparency = 1
+    llIIllIIlI.Parent = lIlllllIIl
+
+    local lllIIllIlI = Instance.new(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+    lllIIllIlI.Size = UDim2.new(1, 0, 0, 40)
+    lllIIllIlI.BackgroundTransparency = 1
+    lllIIllIlI.Text = "How To Use The Script (Please Read)"
+    lllIIllIlI.TextColor3 = Color3.fromRGB(255, 255, 255)
+    lllIIllIlI.Font = Enum.Font["SourceSansBold"]
+    lllIIllIlI.TextSize = 24
+    lllIIllIlI.Parent = llIIllIIlI
+
+    local lIllIIllIl = Instance.new(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+    lIllIIllIl.Size = UDim2.new(1, 0, 1, -140)
+    lIllIIllIl.Position = UDim2.new(0, 0, 0, 55)
+    lIllIIllIl.BackgroundTransparency = 1
+    lIllIIllIl.Text = "" 
+    lIllIIllIl.TextColor3 = Color3.fromRGB(230, 230, 230)
+    lIllIIllIl.Font = Enum.Font["SourceSansItalic"]
+    lIllIIllIl.TextSize = 15
+    lIllIIllIl.TextWrapped = true
+    lIllIIllIl.TextXAlignment = Enum.TextXAlignment.Left
+    lIllIIllIl.TextYAlignment = Enum.TextYAlignment.Top
+    lIllIIllIl.Parent = llIIllIIlI
+
+    local llIllIIllI = Instance.new(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+    llIllIIllI.Size = UDim2.new(1, 0, 0, 25)
+    llIllIIllI.Position = UDim2.new(0, 0, 1, -75)
+    llIllIIllI.BackgroundTransparency = 1
+    llIllIIllI.Text = "Credits Goes To superme001128 on Discord" 
+    llIllIIllI.TextColor3 = Color3.fromRGB(140, 140, 140)
+    llIllIIllI.Font = Enum.Font["SourceSansItalic"]
+    llIllIIllI.TextSize = 15
+    llIllIIllI.Parent = llIIllIIlI
+
+    local lIIlIIllll = Instance.new(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+    lIIlIIllll.Size = UDim2.new(0, 240, 0, 40)
+    lIIlIIllll.Position = UDim2.new(0, 10, 1, -45)
+    lIIlIIllll.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    lIIlIIllll.Text = "I Understand & Continue"
+    lIIlIIllll.TextColor3 = Color3.fromRGB(255, 255, 255)
+    lIIlIIllll.Font = Enum.Font["SourceSansBold"]
+    lIIlIIllll.TextSize = 16
+    lIIlIIllll.Visible = false 
+    lIIlIIllll.Parent = llIIllIIlI
+
+    local llIlIlllIl = Instance.new(string.char(85, 73, 67, 111, 114, 110, 101, 114))
+    llIlIlllIl.CornerRadius = UDim.new(0, 6)
+    llIlIlllIl.Parent = lIIlIIllll
+
+    local lllIllIIlI = Instance.new(string.char(84, 101, 120, 116, 66, 117, 116, 116, 111, 110))
+    lllIllIIlI.Size = UDim2.new(0, 140, 0, 40) 
+    lllIllIIlI.Position = UDim2.new(1, -150, 1, -45) 
+    lllIllIIlI.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    lllIllIIlI.Text = "Skip >>" 
+    lllIllIIlI.TextColor3 = Color3.fromRGB(255, 255, 255)
+    lllIllIIlI.Font = Enum.Font["SourceSansBold"]
+    lllIllIIlI.TextSize = 16
+    lllIllIIlI.Parent = llIIllIIlI
+
+    local lIllIllIIl = Instance.new(string.char(85, 73, 67, 111, 114, 110, 101, 114))
+    lIllIllIIl.CornerRadius = UDim.new(0, 6)
+    lIllIllIIl.Parent = lllIllIIlI
+
+    local llIIlIlIll = Instance.new(string.char(70, 114, 97, 109, 101))
+    llIIlIlIll.Name = string.char(77, 97, 105, 110, 70, 114, 97, 109, 101)
+    llIIlIlIll.Size = UDim2.new(1, 0, 1, 0) 
+    llIIlIlIll.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
+    llIIlIlIll.BorderSizePixel = 0
+    llIIlIlIll.Active = true
+    llIIlIlIll.Visible = false 
+    llIIlIlIll.Parent = llIlIlIIll
+
+    local lIIlllIlll = Instance.new(string.char(70, 114, 97, 109, 101))
+    lIIlllIlll.Size = UDim2.new(0, 460, 0, 140)
+    lIIlllIlll.Position = UDim2.new(0.5, -230, 0.5, -70)
+    lIIlllIlll.BackgroundTransparency = 1
+    lIIlllIlll.Parent = llIIlIlIll
+
+    local llIllIllII = Instance.new(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+    llIllIllII.Name = string.char(84, 101, 120, 116, 76, 97, 98, 101, 108)
+    llIllIllII.Size = UDim2.new(1, 0, 0, 35)
+    llIllIllII.BackgroundTransparency = 1
+    llIllIllII.Text = "Enter Your Url"
+    llIllIllII.TextColor3 = Color3.fromRGB(255, 255, 255)
+    llIllIllII.Font = Enum.Font["SourceSansBold"]
+    llIllIllII.TextSize = 24
+    llIllIllII.Parent = lIIlllIlll
+
+    local lllIlIIlll = Instance.new(string.char(84, 101, 120, 116, 66, 111, 120))
+    lllIlIIlll.Name = string.char(85, 114, 108, 84, 101, 120, 116, 66, 111, 120)
+    lllIlIIlll.Size = UDim2.new(1, 0, 0, 45)
+    lllIlIIlll.Position = UDim2.new(0, 0, 0, 45)
+    lllIlIIlll.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    lllIlIIlll.TextColor3 = Color3.fromRGB(0, 255, 150) 
+    lllIlIIlll.PlaceholderText = "Paste link here and press Enter..."
+    lllIlIIlll.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+    lllIlIIlll.Text = ""
+    lllIlIIlll.ClearTextOnFocus = false
+    lllIlIIlll.Font = Enum.Font["Code"]
+    lllIlIIlll.TextSize = 14
+    lllIlIIlll.Parent = lIIlllIlll
+    
+    local lIllIIllII = Instance.new(string.char(85, 73, 67, 111, 114, 110, 101, 114))
+    lIllIIllII.CornerRadius = UDim.new(0, 8)
+    lIllIIllII.Parent = lllIlIIlll
+
+    local llIlIIllIl = Instance.new(string.char(84, 101, 120, 116, 76, 97, 98, 101, 108))
+    llIlIIllIl.Name = string.char(83, 116, 97, 116, 117, 115, 76, 97, 98, 101, 108)
+    llIlIIllIl.Size = UDim2.new(1, 0, 0, 35)
+    llIlIIllIl.Position = UDim2.new(0, 0, 0, 100)
+    llIlIIllIl.BackgroundTransparency = 1
+    llIlIIllIl.Text = "Waiting for URL input..."
+    llIlIIllIl.TextColor3 = Color3.fromRGB(170, 170, 170)
+    llIlIIllIl.Font = Enum.Font["SourceSansItalic"]
+    llIlIIllIl.TextSize = 16
+    llIlIIllIl.TextWrapped = true
+    llIlIIllIl.Parent = lIIlllIlll
+
+    local function lIIlIlllIl()
+        lIlllllIIl.Visible = false 
+        llIIlIlIll.Visible = true 
+        if MANUAL_URL and MANUAL_URL ~= "" then
+            lllIlIIlll.Visible = false
+            task.spawn(function()
+                lIIlIIllIl(MANUAL_URL, llIlIIllIl, llIlIlIIll, llIllIllII)
+            end)
+        end
+    end
+
+    lIIlIIllll.MouseButton1Click:Connect(lIIlIlllIl)
+    lllIllIIlI.MouseButton1Click:Connect(lIIlIlllIl)
+
+    lllIlIIlll.FocusLost:Connect(function(enterPressed)
+        if enterPressed and lllIlIIlll.Text ~= "" then
+            local targetUrl = lllIlIIlll.Text
+            lllIlIIlll.Visible = false 
+            task.spawn(function()
+                lIIlIIllIl(targetUrl, llIlIIllIl, llIlIlIIll, llIllIllII)
+            end)
+        end
+    end)
+
+    local lllIlIIlIl = "STEP 1-Get your url that you want to deobfuscate (Jnkie Or Luarmor or any script that doesnt gives you acsess to check the code)\n\n" ..
+                             "STEP 2-Paste the url you want to crack into the gui that shows up\n\n" ..
+                             "STEP 3-Go to your executor you will see file that is called Deobfuscated_17156432.lua). Or similar to that open it and you will see your url is cracked sucsessfully.\n\n" ..
+                             "Note:If you have problems with file script has auto print to console (it writes cracked script in console)\n\n" ..
+                             "Important:If inside the url there is an obfuscated script then its not scripts problem you can deobfuscate it yourself."
+
+    task.spawn(function()
+        task.wait(2) 
+        lIlllIIlll(lIllIIllIl, lllIlIIlIl, 0.018)
+        if lIIlIIllll and lIIlIIllll.Parent then
+            lIIlIIllll.Visible = true
+        end
+    end)
+end
+
+pcall(llIIlllIIl)
