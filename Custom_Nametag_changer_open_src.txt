@@ -1,0 +1,330 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+
+local Settings = {
+    Tag = "[VIP]",
+    Color = Color3.fromRGB(255, 215, 0),
+}
+
+
+local sg = Instance.new("ScreenGui")
+sg.Name = "TagEditor"
+sg.ResetOnSpawn = false
+sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+sg.Parent = PlayerGui
+
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.new(0, 340, 0, 440)
+main.Position = UDim2.new(0.5, -170, 0.5, -220)
+main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+main.BorderSizePixel = 0
+main.Active = true
+main.Parent = sg
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
+
+local stroke = Instance.new("UIStroke", main)
+stroke.Color = Color3.fromRGB(60, 60, 60)
+stroke.Thickness = 1.5
+
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, -50, 0, 36)
+title.Position = UDim2.new(0, 15, 0, 6)
+title.BackgroundTransparency = 1
+title.Text = "NameTag Editor"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 18
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.new(0, 32, 0, 32)
+close.Position = UDim2.new(1, -38, 0, 4)
+close.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+close.Text = "X"
+close.TextColor3 = Color3.fromRGB(255, 255, 255)
+close.Font = Enum.Font.GothamBold
+close.TextSize = 14
+Instance.new("UICorner", close).CornerRadius = UDim.new(0, 8)
+
+close.MouseButton1Click:Connect(function()
+    sg.Enabled = false
+end)
+
+
+local dragging, dragStart, startPos
+main.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = main.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+main.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+
+local tLabel = Instance.new("TextLabel", main)
+tLabel.Size = UDim2.new(1, -30, 0, 18)
+tLabel.Position = UDim2.new(0, 15, 0, 48)
+tLabel.BackgroundTransparency = 1
+tLabel.Text = "Tag Text"
+tLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+tLabel.TextSize = 13
+tLabel.Font = Enum.Font.Gotham
+tLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local tBox = Instance.new("TextBox", main)
+tBox.Size = UDim2.new(1, -30, 0, 34)
+tBox.Position = UDim2.new(0, 15, 0, 68)
+tBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+tBox.Text = Settings.Tag
+tBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+tBox.Font = Enum.Font.Gotham
+tBox.TextSize = 14
+tBox.ClearTextOnFocus = false
+Instance.new("UICorner", tBox).CornerRadius = UDim.new(0, 8)
+
+
+local cLabel = Instance.new("TextLabel", main)
+cLabel.Size = UDim2.new(1, -30, 0, 18)
+cLabel.Position = UDim2.new(0, 15, 0, 114)
+cLabel.BackgroundTransparency = 1
+cLabel.Text = "Tag Color (R   G   B)"
+cLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+cLabel.TextSize = 13
+cLabel.Font = Enum.Font.Gotham
+cLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local rgbHolder = Instance.new("Frame", main)
+rgbHolder.Size = UDim2.new(1, -30, 0, 34)
+rgbHolder.Position = UDim2.new(0, 15, 0, 134)
+rgbHolder.BackgroundTransparency = 1
+
+local function makeBox(name, def, x)
+    local box = Instance.new("TextBox")
+    box.Name = name
+    box.Size = UDim2.new(0.3, -6, 1, 0)
+    box.Position = UDim2.new(x, 0, 0, 0)
+    box.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    box.Text = tostring(def)
+    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.Font = Enum.Font.Gotham
+    box.TextSize = 14
+    box.ClearTextOnFocus = false
+    box.Parent = rgbHolder
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
+    return box
+end
+
+local rBox = makeBox("R", math.floor(Settings.Color.R * 255), 0)
+local gBox = makeBox("G", math.floor(Settings.Color.G * 255), 0.35)
+local bBox = makeBox("B", math.floor(Settings.Color.B * 255), 0.7)
+
+
+local pLabel = Instance.new("TextLabel", main)
+pLabel.Size = UDim2.new(1, -30, 0, 18)
+pLabel.Position = UDim2.new(0, 15, 0, 180)
+pLabel.BackgroundTransparency = 1
+pLabel.Text = "Preview"
+pLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+pLabel.TextSize = 13
+pLabel.Font = Enum.Font.Gotham
+pLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local pFrame = Instance.new("Frame", main)
+pFrame.Size = UDim2.new(1, -30, 0, 54)
+pFrame.Position = UDim2.new(0, 15, 0, 200)
+pFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Instance.new("UICorner", pFrame).CornerRadius = UDim.new(0, 10)
+
+local pText = Instance.new("TextLabel", pFrame)
+pText.Size = UDim2.new(1, 0, 1, 0)
+pText.BackgroundTransparency = 1
+pText.Text = Settings.Tag .. " " .. LocalPlayer.Name
+pText.TextColor3 = Settings.Color
+pText.Font = Enum.Font.GothamBold
+pText.TextSize = 18
+
+
+local preLabel = Instance.new("TextLabel", main)
+preLabel.Size = UDim2.new(1, -30, 0, 18)
+preLabel.Position = UDim2.new(0, 15, 0, 264)
+preLabel.BackgroundTransparency = 1
+preLabel.Text = "Presets"
+preLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+preLabel.TextSize = 13
+preLabel.Font = Enum.Font.Gotham
+preLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local preHolder = Instance.new("Frame", main)
+preHolder.Size = UDim2.new(1, -30, 0, 38)
+preHolder.Position = UDim2.new(0, 15, 0, 284)
+preHolder.BackgroundTransparency = 1
+
+local presets = {
+    {255, 215, 0},  
+    {255, 0, 0},   
+    {0, 255, 0},   
+    {0, 150, 255},  
+    {255, 0, 255},  
+    {255, 105, 180},
+    {255, 255, 255},
+    {255, 140, 0},  
+}
+
+for i, col in ipairs(presets) do
+    local btn = Instance.new("TextButton", preHolder)
+    btn.Size = UDim2.new(0, 36, 0, 36)
+    btn.Position = UDim2.new(0, (i - 1) * 40, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(col[1], col[2], col[3])
+    btn.Text = ""
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    local s = Instance.new("UIStroke", btn)
+    s.Color = Color3.fromRGB(80, 80, 80)
+    s.Thickness = 1
+
+    btn.MouseButton1Click:Connect(function()
+        rBox.Text = tostring(col[1])
+        gBox.Text = tostring(col[2])
+        bBox.Text = tostring(col[3])
+    end)
+end
+
+local apply = Instance.new("TextButton", main)
+apply.Size = UDim2.new(1, -30, 0, 42)
+apply.Position = UDim2.new(0, 15, 0, 338)
+apply.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+apply.Text = "Apply NameTag"
+apply.TextColor3 = Color3.fromRGB(255, 255, 255)
+apply.Font = Enum.Font.GothamBold
+apply.TextSize = 16
+Instance.new("UICorner", apply).CornerRadius = UDim.new(0, 10)
+
+
+local status = Instance.new("TextLabel", main)
+status.Size = UDim2.new(1, -30, 0, 20)
+status.Position = UDim2.new(0, 15, 0, 390)
+status.BackgroundTransparency = 1
+status.Text = "Press RightShift to toggle"
+status.TextColor3 = Color3.fromRGB(120, 120, 120)
+status.TextSize = 12
+status.Font = Enum.Font.Gotham
+status.TextXAlignment = Enum.TextXAlignment.Center
+
+
+local function getColor()
+    local r = math.clamp(tonumber(rBox.Text) or 255, 0, 255)
+    local g = math.clamp(tonumber(gBox.Text) or 215, 0, 255)
+    local b = math.clamp(tonumber(bBox.Text) or 0, 0, 255)
+    return Color3.fromRGB(r, g, b)
+end
+
+local function updatePreview()
+    local col = getColor()
+    pText.TextColor3 = col
+    pText.Text = tBox.Text .. " " .. LocalPlayer.Name
+    return col
+end
+
+tBox:GetPropertyChangedSignal("Text"):Connect(updatePreview)
+rBox:GetPropertyChangedSignal("Text"):Connect(updatePreview)
+gBox:GetPropertyChangedSignal("Text"):Connect(updatePreview)
+bBox:GetPropertyChangedSignal("Text"):Connect(updatePreview)
+
+
+apply.MouseButton1Click:Connect(function()
+    Settings.Tag = tBox.Text
+    Settings.Color = updatePreview()
+    status.Text = "Applied! Tag: " .. Settings.Tag
+    status.TextColor3 = Color3.fromRGB(0, 255, 100)
+    task.delay(2, function()
+        status.Text = "Press RightShift to toggle"
+        status.TextColor3 = Color3.fromRGB(120, 120, 120)
+    end)
+end)
+
+
+UserInputService.InputBegan:Connect(function(inp, gpe)
+    if not gpe and inp.KeyCode == Enum.KeyCode.RightShift then
+        sg.Enabled = not sg.Enabled
+    end
+end)
+
+
+local function tagChar(char)
+    local hum = char:WaitForChild("Humanoid", 10)
+    if hum then
+        hum.DisplayName = Settings.Tag .. " " .. LocalPlayer.Name
+    end
+end
+
+if LocalPlayer.Character then
+    task.spawn(tagChar, LocalPlayer.Character)
+end
+LocalPlayer.CharacterAdded:Connect(tagChar)
+
+local function patchList()
+    local list = CoreGui:FindFirstChild("PlayerList")
+    if not list then return end
+    for _, obj in ipairs(list:GetDescendants()) do
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+            local txt = obj.Text
+            if txt == LocalPlayer.Name or txt == LocalPlayer.DisplayName then
+                if not txt:find(Settings.Tag, 1, true) then
+                    obj.Text = Settings.Tag .. " " .. txt
+                    obj.TextColor3 = Settings.Color
+                end
+            end
+        end
+    end
+end
+
+local function patchBoard()
+    local pg = LocalPlayer:FindFirstChild("PlayerGui")
+    if not pg then return end
+    local mg = pg:FindFirstChild("MainGui")
+    if not mg then return end
+    local m = mg:FindFirstChild("main")
+    if not m then return end
+    local t = m:FindFirstChild("tos")
+    if not t then return end
+    local s = t:FindFirstChild("scroll")
+    if not s then return end
+
+    for _, sample in ipairs(s:GetChildren()) do
+        if sample.Name == "sample" then
+            local nl = sample:FindFirstChild("name")
+            if nl and nl:IsA("TextLabel") and nl.Text:find(LocalPlayer.Name, 1, true) then
+                if not nl.Text:find(Settings.Tag, 1, true) then
+                    nl.Text = Settings.Tag .. " " .. nl.Text
+                    nl.TextColor3 = Settings.Color
+                end
+            end
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    patchList()
+    patchBoard()
+end)
+
+print(">> NameTag Editor loaded")
