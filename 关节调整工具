@@ -1,0 +1,195 @@
+-- LocalScript
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+
+-- ✅ 只支持 R6
+if humanoid.RigType ~= Enum.HumanoidRigType.R6 then
+	warn("此工具只支持 R6 角色")
+	return
+end
+
+-- 关闭默认动画
+local animate = char:FindFirstChild("Animate")
+if animate then animate.Disabled = true end
+humanoid.AutoRotate = false
+humanoid.Sit = true
+
+--------------------------------------------------
+-- 获取 R6 Motor6D
+--------------------------------------------------
+
+local motors = {}
+local originalC0 = {}
+
+for _, part in ipairs(char:GetDescendants()) do
+	if part:IsA("Motor6D") then
+		motors[part.Name] = part
+		originalC0[part.Name] = part.C0
+	end
+end
+
+local motorChineseNames = {
+	["Neck"] = "头部",
+	["Right Shoulder"] = "右手",
+	["Left Shoulder"] = "左手",
+	["Right Hip"] = "右脚",
+	["Left Hip"] = "左脚",
+	["RootJoint"] = "根部",
+}
+
+--------------------------------------------------
+-- UI
+--------------------------------------------------
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ResetOnSpawn = false
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 420, 0, 600)
+mainFrame.Position = UDim2.new(0.5, -210, 0.5, -300)
+mainFrame.BackgroundColor3 = Color3.fromRGB(50,50,50)
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0,5)
+listLayout.Parent = mainFrame
+
+--------------------------------------------------
+-- 创建关节按钮
+--------------------------------------------------
+
+local function createMotorButtons(name, motor)
+	local motorFrame = Instance.new("Frame")
+	motorFrame.Size = UDim2.new(1, -10, 0, 70)
+	motorFrame.BackgroundColor3 = Color3.fromRGB(70,70,70)
+	motorFrame.Parent = mainFrame
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1,0,0,20)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(255,255,255)
+	label.Text = motorChineseNames[name] or name
+	label.Parent = motorFrame
+
+	local function createLine(yOffset, isRotation)
+		local axes = {"X","Y","Z","X","Y","Z"}
+		local directions = {1,1,1,-1,-1,-1}
+
+		for i = 1,6 do
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(0.13,0,0,20)
+			btn.Position = UDim2.new(0.015 + (i-1)*0.14,0,0,yOffset)
+			btn.TextSize = 12
+			btn.Text = axes[i] .. (directions[i]==1 and "+" or "-")
+			btn.BackgroundColor3 = isRotation and Color3.fromRGB(100,150,100) or Color3.fromRGB(100,100,150)
+			btn.Parent = motorFrame
+
+			btn.MouseButton1Click:Connect(function()
+				local delta
+				if isRotation then
+					delta = math.rad(5) * directions[i]
+					if axes[i]=="X" then
+						motor.C0 *= CFrame.Angles(delta,0,0)
+					elseif axes[i]=="Y" then
+						motor.C0 *= CFrame.Angles(0,delta,0)
+					elseif axes[i]=="Z" then
+						motor.C0 *= CFrame.Angles(0,0,delta)
+					end
+				else
+					delta = 0.1 * directions[i]
+					if axes[i]=="X" then
+						motor.C0 *= CFrame.new(delta,0,0)
+					elseif axes[i]=="Y" then
+						motor.C0 *= CFrame.new(0,delta,0)
+					elseif axes[i]=="Z" then
+						motor.C0 *= CFrame.new(0,0,delta)
+					end
+				end
+			end)
+		end
+	end
+
+	createLine(25,true)
+	createLine(45,false)
+end
+
+for name,motor in pairs(motors) do
+	createMotorButtons(name,motor)
+end
+
+--------------------------------------------------
+-- 重置按钮
+--------------------------------------------------
+
+local resetBtn = Instance.new("TextButton")
+resetBtn.Size = UDim2.new(1,0,0,40)
+resetBtn.Text = "重置所有关节"
+resetBtn.BackgroundColor3 = Color3.fromRGB(180,60,60)
+resetBtn.Parent = mainFrame
+
+resetBtn.MouseButton1Click:Connect(function()
+	for name,motor in pairs(motors) do
+		motor.C0 = originalC0[name]
+	end
+end)
+
+--------------------------------------------------
+-- 复制按钮
+--------------------------------------------------
+
+local copyBtn = Instance.new("TextButton")
+copyBtn.Size = UDim2.new(1,0,0,40)
+copyBtn.Text = "复制所有关节C0"
+copyBtn.BackgroundColor3 = Color3.fromRGB(200,100,50)
+copyBtn.Parent = mainFrame
+
+copyBtn.MouseButton1Click:Connect(function()
+	local text = ""
+	for name,motor in pairs(motors) do
+		text = text .. name .. " = " .. tostring(motor.C0) .. "\n"
+	end
+
+	if setclipboard then
+		setclipboard(text)
+		copyBtn.Text = "已复制"
+	end
+end)
+
+--------------------------------------------------
+-- 输入框应用姿势
+--------------------------------------------------
+
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(1,0,0,80)
+inputBox.PlaceholderText = "在这里粘贴关节数据，按回车应用"
+inputBox.ClearTextOnFocus = false
+inputBox.TextWrapped = true
+inputBox.TextYAlignment = Enum.TextYAlignment.Top
+inputBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+inputBox.TextColor3 = Color3.fromRGB(255,255,255)
+inputBox.Parent = mainFrame
+
+inputBox.FocusLost:Connect(function(enterPressed)
+	if not enterPressed then return end
+
+	local lines = string.split(inputBox.Text, "\n")
+
+	for _, line in ipairs(lines) do
+		local name, value = string.match(line, "^(.-)%s*=%s*(.+)$")
+		if name and value and motors[name] then
+			local func = loadstring("return " .. value)
+			if func then
+				local success, result = pcall(func)
+				if success and typeof(result) == "CFrame" then
+					motors[name].C0 = result
+				end
+			end
+		end
+	end
+end)
