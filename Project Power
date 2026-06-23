@@ -2,7 +2,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-if game.PlaceId ~= 103072644129928 then return end
+if game.PlaceId ~= 11492203224 then return end
 
 local player = Players.LocalPlayer
 local gui = Instance.new("ScreenGui")
