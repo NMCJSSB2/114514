@@ -247,10 +247,66 @@ tpBtn.MouseButton1Click:Connect(function()
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E5%AE%89%E6%A0%BC%E6%96%AF%E7%89%B9%E6%9C%97%E6%99%AE%E6%94%BB"))()
 end)
 
+
+local thunderBtn = Instance.new("TextButton")
+thunderBtn.Size = UDim2.new(0,150,0,50)
+thunderBtn.Position = UDim2.new(0,20,0,300)
+thunderBtn.BackgroundColor3 = mainUI.BackgroundColor3
+thunderBtn.BorderColor3 = border.Color
+thunderBtn.BorderSizePixel = 2
+thunderBtn.Text = "雷电普攻"
+thunderBtn.TextColor3 = Color3.fromRGB(255,200,0)
+thunderBtn.Font = Enum.Font.SourceSansBold
+thunderBtn.TextSize = 20
+thunderBtn.Parent = mainUI
+thunderBtn.ZIndex = 2
+local s1=Instance.new("UIStroke",thunderBtn)
+s1.Color=Color3.new(0,0,0)
+s1.Thickness=2
+s1.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+local g1=Instance.new("UIGradient",thunderBtn)
+g1.Color=ColorSequence.new{
+ ColorSequenceKeypoint.new(0,Color3.fromRGB(255,200,0)),
+ ColorSequenceKeypoint.new(0.5,Color3.fromRGB(255,230,120)),
+ ColorSequenceKeypoint.new(1,Color3.fromRGB(255,200,0))
+}
+g1.Rotation=45
+thunderBtn.MouseButton1Click:Connect(function()
+ loadstring(game:HttpGet("https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E9%9B%B7%E7%94%B5%E6%99%AE%E6%94%BB"))()
+end)
+
+local warBtn = Instance.new("TextButton")
+warBtn.Size = UDim2.new(0,150,0,50)
+warBtn.Position = UDim2.new(0,180,0,300)
+warBtn.BackgroundColor3 = mainUI.BackgroundColor3
+warBtn.BorderColor3 = border.Color
+warBtn.BorderSizePixel = 2
+warBtn.Text = "战争女侠普攻"
+warBtn.TextColor3 = Color3.fromRGB(255,255,160)
+warBtn.Font = Enum.Font.SourceSansBold
+warBtn.TextSize = 20
+warBtn.Parent = mainUI
+warBtn.ZIndex = 2
+local s2=Instance.new("UIStroke",warBtn)
+s2.Color=Color3.new(0,0,0)
+s2.Thickness=2
+s2.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+local g2=Instance.new("UIGradient",warBtn)
+g2.Color=ColorSequence.new{
+ ColorSequenceKeypoint.new(0,Color3.fromRGB(255,255,160)),
+ ColorSequenceKeypoint.new(0.5,Color3.fromRGB(255,255,220)),
+ ColorSequenceKeypoint.new(1,Color3.fromRGB(255,255,160))
+}
+g2.Rotation=45
+warBtn.MouseButton1Click:Connect(function()
+ loadstring(game:HttpGet('https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E6%88%98%E4%BA%89%E5%A5%B3%E4%BE%A0%E6%99%AE%E6%94%BB'))()
+end)
+
+
 local protectionEnabled = false
 local protectionBtn = Instance.new("TextButton")
 protectionBtn.Size = UDim2.new(0, 310, 0, 50)
-protectionBtn.Position = UDim2.new(0, 20, 0, 300)
+protectionBtn.Position = UDim2.new(0, 20, 0, 370)
 protectionBtn.BackgroundColor3 = mainUI.BackgroundColor3
 protectionBtn.BorderColor3 = border.Color
 protectionBtn.BorderSizePixel = 2
