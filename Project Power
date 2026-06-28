@@ -305,8 +305,8 @@ end)
 
 local protectionEnabled = false
 local protectionBtn = Instance.new("TextButton")
-protectionBtn.Size = UDim2.new(0, 310, 0, 50)
-protectionBtn.Position = UDim2.new(0, 20, 0, 370)
+protectionBtn.Size = UDim2.new(0, 310, 0, 30)
+protectionBtn.Position = UDim2.new(0, 20, 0, 365)
 protectionBtn.BackgroundColor3 = mainUI.BackgroundColor3
 protectionBtn.BorderColor3 = border.Color
 protectionBtn.BorderSizePixel = 2
