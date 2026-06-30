@@ -21,19 +21,20 @@ btn.MouseButton1Click:Connect(function()
     local myRoot = myChar:FindFirstChild("HumanoidRootPart")
     if not myRoot then return end
 
-    for _, plr in pairs(Players:GetPlayers()) do
+    for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
             local root = plr.Character:FindFirstChild("HumanoidRootPart")
             if root then
                 local distance = (root.Position - myRoot.Position).Magnitude
+
                 if distance <= 150 then
                     local args = {
                         "TechJacket",
                         "M1",
                         plr.Character,
-                        "BoostCombatEnd",
+                        "BoostCombatBlockBreaker",
                         1,
-                        103074407640034.95
+                        13275049716.970358
                     }
 
                     ReplicatedStorage
