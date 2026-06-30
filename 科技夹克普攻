@@ -18,17 +18,25 @@ btn.MouseButton1Click:Connect(function()
     local myChar = LocalPlayer.Character
     if not myChar then return end
 
-    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
+    local myRoot = myChar:FindFirstChild("HumanoidRootPart")  
+    if not myRoot then return end  
 
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
-            local root = plr.Character:FindFirstChild("HumanoidRootPart")
-            if root then
-                local distance = (root.Position - myRoot.Position).Magnitude
+    for _, plr in pairs(Players:GetPlayers()) do  
+        if plr ~= LocalPlayer and plr.Character then  
+            local root = plr.Character:FindFirstChild("HumanoidRootPart")  
+            if root then  
+                local distance = (root.Position - myRoot.Position).Magnitude  
+                if distance <= 150 then  
+                    local args1 = {  
+                        "TechJacket",  
+                        "M1",  
+                        plr.Character,  
+                        "BoostCombatEnd",  
+                        1,  
+                        103074407640034.95  
+                    }  
 
-                if distance <= 150 then
-                    local args = {
+                    local args2 = {
                         "TechJacket",
                         "M1",
                         plr.Character,
@@ -37,13 +45,19 @@ btn.MouseButton1Click:Connect(function()
                         13275049716.970358
                     }
 
-                    ReplicatedStorage
-                        :WaitForChild("game_folder")
-                        :WaitForChild("remote")
-                        :WaitForChild("ability_remote")
-                        :FireServer(unpack(args))
-                end
-            end
-        end
+                    ReplicatedStorage  
+                        :WaitForChild("game_folder")  
+                        :WaitForChild("remote")  
+                        :WaitForChild("ability_remote")  
+                        :FireServer(unpack(args1))
+
+                    ReplicatedStorage  
+                        :WaitForChild("game_folder")  
+                        :WaitForChild("remote")  
+                        :WaitForChild("ability_remote")  
+                        :FireServer(unpack(args2))
+                end  
+            end  
+        end  
     end
 end)
