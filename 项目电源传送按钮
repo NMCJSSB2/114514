@@ -1,11 +1,17 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local abilityRemote = ReplicatedStorage:WaitForChild("game_folder"):WaitForChild("remote"):WaitForChild("ability_remote")
+local movementRemote = ReplicatedStorage:WaitForChild("game_folder"):WaitForChild("remote"):WaitForChild("movement_remote")
 
 local gui = Instance.new("ScreenGui")
 gui.ResetOnSpawn = false
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
+-- 按钮1 (原有)
 local button1 = Instance.new("ImageButton")
 button1.Size = UDim2.new(0.05, 0, 0.125, 0)
 button1.Position = UDim2.new(0.73, 0, 0.823, 0)
@@ -22,12 +28,10 @@ button1.MouseButton1Click:Connect(function()
 		"Forward"
 	}
 
-	ReplicatedStorage:WaitForChild("game_folder")
-		:WaitForChild("remote")
-		:WaitForChild("movement_remote")
-		:FireServer(unpack(args))
+	movementRemote:FireServer(unpack(args))
 end)
 
+-- 按钮2 (原有)
 local button2 = Instance.new("ImageButton")
 button2.Size = UDim2.new(0.05, 0, 0.125, 0)
 button2.Position = UDim2.new(0.785, 0, 0.76, 0)
@@ -45,10 +49,7 @@ button2.MouseButton1Click:Connect(function()
 		[6] = 103074406785778.03
 	}
 
-	ReplicatedStorage:WaitForChild("game_folder")
-		:WaitForChild("remote")
-		:WaitForChild("ability_remote")
-		:FireServer(unpack(args))
+	abilityRemote:FireServer(unpack(args))
 
 	local char = LocalPlayer.Character
 	if char then
@@ -59,5 +60,110 @@ button2.MouseButton1Click:Connect(function()
 			local track = hum:LoadAnimation(anim)
 			track:Play()
 		end
+	end
+end)
+
+-- 按钮3 (长按按钮)
+local btn = Instance.new("ImageButton")
+btn.Size = UDim2.new(0.05, 0, 0.12, 0)
+btn.Position = UDim2.new(0.645, 0, 0.815, 0)
+btn.BackgroundTransparency = 1
+btn.Image = "rbxassetid://100601425820983"
+btn.ImageColor3 = Color3.fromRGB(100, 255, 100)
+btn.Parent = gui
+
+local isHolding = false
+local animTrack = nil
+local holdConnection = nil
+
+local function getCharacter()
+	return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+end
+
+local function playAnimation()
+	local character = getCharacter()
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then return end
+	
+	local anim = Instance.new("Animation")
+	anim.AnimationId = "rbxassetid://89051176234077"
+	animTrack = humanoid:LoadAnimation(anim)
+	animTrack:Play()
+end
+
+local function stopAnimation()
+	if animTrack then
+		animTrack:Stop()
+		animTrack = nil
+	end
+end
+
+local function sendBlockRemove()
+	local character = getCharacter()
+	local args = {
+		"Angstrom",
+		"Block",
+		[4] = "BlockAdd",
+		character,
+	}
+	abilityRemote:FireServer(unpack(args))
+end
+
+local function sendBlockAdd()
+	local character = getCharacter()
+	local args = {
+		"Angstrom",
+		"Block",
+		[4] = "BlockRemove",
+		character,
+	}
+	abilityRemote:FireServer(unpack(args))
+end
+
+btn.MouseButton1Down:Connect(function()
+	isHolding = true
+	sendBlockRemove()
+	playAnimation()
+	
+	holdConnection = RunService.Heartbeat:Connect(function()
+		if not isHolding then
+			holdConnection:Disconnect()
+			holdConnection = nil
+		end
+	end)
+end)
+
+btn.MouseButton1Up:Connect(function()
+	if isHolding then
+		isHolding = false
+		stopAnimation()
+		sendBlockAdd()
+		
+		if holdConnection then
+			holdConnection:Disconnect()
+			holdConnection = nil
+		end
+	end
+end)
+
+btn.MouseLeave:Connect(function()
+	if isHolding then
+		isHolding = false
+		stopAnimation()
+		sendBlockAdd()
+		
+		if holdConnection then
+			holdConnection:Disconnect()
+			holdConnection = nil
+		end
+	end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function()
+	stopAnimation()
+	isHolding = false
+	if holdConnection then
+		holdConnection:Disconnect()
+		holdConnection = nil
 	end
 end)
