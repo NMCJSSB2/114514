@@ -1,0 +1,273 @@
+local Players = game:GetService("Players")
+local GuiService = game:GetService("GuiService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MiniGameGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local score = 0
+local combo = 0
+local lastClickTime = 0
+
+local topFrame = Instance.new("Frame")
+topFrame.Size = UDim2.new(0,180,0,40)
+topFrame.Position = UDim2.new(0.5,-90,0,8)
+topFrame.BackgroundTransparency = 1
+topFrame.Parent = screenGui
+
+local scoreIcon = Instance.new("ImageLabel")
+scoreIcon.Size = UDim2.new(0,30,0,30)
+scoreIcon.Position = UDim2.new(0,0,0.5,-15)
+scoreIcon.BackgroundTransparency = 1
+scoreIcon.Image = "rbxassetid://110487664434524"
+scoreIcon.Parent = topFrame
+
+local scoreLabel = Instance.new("TextLabel")
+scoreLabel.Size = UDim2.new(1,-35,1,0)
+scoreLabel.Position = UDim2.new(0,35,0,0)
+scoreLabel.BackgroundTransparency = 1
+scoreLabel.Text = "0"
+scoreLabel.TextScaled = true
+scoreLabel.Font = Enum.Font.GothamBold
+scoreLabel.TextColor3 = Color3.new(1,1,1)
+scoreLabel.TextStrokeTransparency = 0
+scoreLabel.Parent = topFrame
+
+local comboLabel = Instance.new("TextLabel")
+comboLabel.Size = UDim2.new(0,220,0,40)
+comboLabel.Position = UDim2.new(0,15,0.5,-20)
+comboLabel.BackgroundTransparency = 1
+comboLabel.Text = "COMBO x0"
+comboLabel.TextScaled = true
+comboLabel.Font = Enum.Font.GothamBlack
+comboLabel.TextColor3 = Color3.fromRGB(255,170,0)
+comboLabel.TextStrokeTransparency = 0
+comboLabel.Visible = false
+comboLabel.Parent = screenGui
+
+local clickSound = Instance.new("Sound")
+clickSound.SoundId = "rbxassetid://118570237496712"
+clickSound.Volume = 1
+clickSound.Parent = screenGui
+
+local button = Instance.new("ImageButton")
+button.Size = UDim2.new(0,70,0,70)
+button.BackgroundTransparency = 1
+button.BorderSizePixel = 0
+button.AutoButtonColor = false
+button.Image = "rbxassetid://119347116566800"
+button.Parent = screenGui
+
+local IMAGE1 = "rbxassetid://119347116566800"
+local IMAGE2 = "rbxassetid://87879305003003"
+
+local function RandomPosition()
+
+	local camera = workspace.CurrentCamera
+	local viewport = camera.ViewportSize
+
+	local insetTL,insetBR = GuiService:GetGuiInset()
+
+	local margin=60
+
+	local minX = insetTL.X + margin
+	local minY = insetTL.Y + margin
+
+	local maxX = viewport.X - insetBR.X - button.AbsoluteSize.X - margin
+	local maxY = viewport.Y - insetBR.Y - button.AbsoluteSize.Y - margin
+
+	if maxX < minX then
+		maxX = minX
+	end
+
+	if maxY < minY then
+		maxY = minY
+	end
+
+	button.Position = UDim2.fromOffset(
+		math.random(minX,maxX),
+		math.random(minY,maxY)
+	)
+
+end
+
+RandomPosition()
+
+task.spawn(function()
+
+	local state = false
+
+	while button.Parent do
+
+		state = not state
+
+		if state then
+			button.Image = IMAGE1
+		else
+			button.Image = IMAGE2
+		end
+
+		task.wait(0.1)
+
+	end
+
+end)
+
+local function ShowPlusOne(x,y)
+
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0,90,0,30)
+	frame.Position = UDim2.fromOffset(x-45,y-15)
+	frame.BackgroundTransparency = 1
+	frame.Parent = screenGui
+
+	local txt = Instance.new("TextLabel")
+	txt.Size = UDim2.new(0,45,1,0)
+	txt.BackgroundTransparency = 1
+	txt.Text="+1"
+	txt.TextScaled=true
+	txt.Font=Enum.Font.GothamBold
+	txt.TextColor3=Color3.fromRGB(255,255,0)
+	txt.TextStrokeTransparency=0
+	txt.Parent=frame
+
+	local img=Instance.new("ImageLabel")
+	img.Size=UDim2.new(0,24,0,24)
+	img.Position=UDim2.new(0,48,0.5,-12)
+	img.BackgroundTransparency=1
+	img.Image="rbxassetid://110487664434524"
+	img.Parent=frame
+
+	local tween=TweenService:Create(
+		frame,
+		TweenInfo.new(0.8,Enum.EasingStyle.Quad),
+		{
+			Position=frame.Position-UDim2.fromOffset(0,40)
+		}
+	)
+
+	tween:Play()
+
+	task.spawn(function()
+
+		for i=1,20 do
+
+			txt.TextTransparency +=0.05
+			txt.TextStrokeTransparency +=0.05
+			img.ImageTransparency +=0.05
+
+			task.wait(0.04)
+
+		end
+
+		frame:Destroy()
+
+	end)
+
+end
+
+local comboBaseWidth = 220
+local comboBaseHeight = 40
+local comboExpandSize = 10
+
+local function PlayComboBounceAnimation()
+
+	TweenService:Create(comboLabel, TweenInfo.new(0, Enum.EasingStyle.Linear), {}):Play()
+	
+	comboLabel.Size = UDim2.new(0, comboBaseWidth, 0, comboBaseHeight)
+
+	local tweenExpand = TweenService:Create(
+		comboLabel,
+		TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{
+			Size = UDim2.new(0, comboBaseWidth + comboExpandSize, 0, comboBaseHeight + comboExpandSize)
+		}
+	)
+
+	local tweenShrink = TweenService:Create(
+		comboLabel,
+		TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{
+			Size = UDim2.new(0, comboBaseWidth, 0, comboBaseHeight)
+		}
+	)
+
+	tweenExpand:Play()
+
+	tweenExpand.Completed:Connect(function()
+		tweenShrink:Play()
+	end)
+
+end
+
+local comboTimerThread = nil
+local fadeTween = nil
+
+local function ResetComboTimer()
+
+	if comboTimerThread then
+		task.cancel(comboTimerThread)
+		comboTimerThread = nil
+	end
+
+	if fadeTween then
+		fadeTween:Cancel()
+		fadeTween = nil
+	end
+
+	comboLabel.TextTransparency = 0
+	comboLabel.TextStrokeTransparency = 0
+
+	comboTimerThread = task.delay(2, function()
+		fadeTween = TweenService:Create(
+			comboLabel,
+			TweenInfo.new(1, Enum.EasingStyle.Linear),
+			{
+				TextTransparency = 1,
+				TextStrokeTransparency = 1
+			}
+		)
+
+		fadeTween:Play()
+
+		fadeTween.Completed:Connect(function()
+			combo = 0
+			comboLabel.Visible = false
+			comboLabel.Text = "COMBO x0"
+			comboLabel.TextTransparency = 0
+			comboLabel.TextStrokeTransparency = 0
+			comboLabel.Size = UDim2.new(0, comboBaseWidth, 0, comboBaseHeight)
+			fadeTween = nil
+			comboTimerThread = nil
+		end)
+	end)
+
+end
+
+button.MouseButton1Click:Connect(function()
+
+	score += 1
+	lastClickTime = tick()
+	combo += 1
+	comboLabel.Visible = true
+	comboLabel.Text = "COMBO x" .. combo
+	scoreLabel.Text = tostring(score)
+
+	PlayComboBounceAnimation()
+
+	ResetComboTimer()
+
+	clickSound:Play()
+
+	local mouse = player:GetMouse()
+
+	ShowPlusOne(mouse.X, mouse.Y)
+
+	RandomPosition()
+
+end)
