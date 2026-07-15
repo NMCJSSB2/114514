@@ -1,0 +1,215 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local repairEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Generator"):WaitForChild("RepairEvent")
+
+local gui = nil
+local btn = nil
+local currentTarget = nil
+local currentState = false
+
+local function createGUI()
+    if gui then
+        gui:Destroy()
+        gui = nil
+        btn = nil
+    end
+    
+    gui = Instance.new("ScreenGui")
+    gui.ResetOnSpawn = false
+    gui.Name = "GeneratorRepairGUI"
+    gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    
+    btn = Instance.new("ImageButton")
+    btn.Size = UDim2.new(0, 60, 0, 60)
+    btn.Position = UDim2.new(0, 20, 0.5, -30)
+    btn.BackgroundTransparency = 1
+    btn.Image = "rbxassetid://101967215154019"
+    btn.Visible = false
+    btn.Parent = gui
+    
+    btn.MouseButton1Click:Connect(function()
+        if not currentTarget then return end
+        
+        currentState = not currentState
+        
+        local args = {
+            currentTarget.Point,
+            currentState
+        }
+        
+        repairEvent:FireServer(unpack(args))
+        
+        if currentState then
+            btn.ImageColor3 = Color3.fromRGB(0, 255, 0)
+        else
+            btn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+        end
+    end)
+end
+
+local function checkAndRecreateGUI()
+    if not gui or not gui.Parent then
+        createGUI()
+    end
+end
+
+local function getAllGeneratorPoints()
+    local points = {}
+    local map = Workspace:FindFirstChild("Map")
+    if not map then return points end
+    
+    local folderNames = {"Gens", "Generators", "Generator"}
+    for _, folderName in pairs(folderNames) do
+        local folder = map:FindFirstChild(folderName)
+        if folder then
+            for _, gen in pairs(folder:GetChildren()) do
+                if gen.Name:match("Generator") then
+                    for _, point in pairs(gen:GetChildren()) do
+                        if point.Name:match("GeneratorPoint") and point:IsA("BasePart") then
+                            table.insert(points, {
+                                Point = point,
+                                Generator = gen,
+                                Folder = folder
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return points
+end
+
+local function getClosestGeneratorPoint()
+    local character = LocalPlayer.Character
+    if not character then return nil end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    
+    local points = getAllGeneratorPoints()
+    local closest = nil
+    local closestDist = math.huge
+    
+    for _, data in pairs(points) do
+        local point = data.Point
+        if point and point:IsA("BasePart") then
+            local dist = (point.Position - root.Position).Magnitude
+            if dist < closestDist then
+                closestDist = dist
+                closest = data
+            end
+        end
+    end
+    
+    if closest and closestDist <= 2 then
+        return closest
+    end
+    return nil
+end
+
+local function updateButtonVisibility()
+    checkAndRecreateGUI()
+    
+    if not btn then return end
+    
+    local character = LocalPlayer.Character
+    if not character then
+        btn.Visible = false
+        currentTarget = nil
+        return
+    end
+    
+    local closest = getClosestGeneratorPoint()
+    if closest then
+        btn.Visible = true
+        currentTarget = closest
+    else
+        btn.Visible = false
+        currentTarget = nil
+    end
+end
+
+local function createHitBoxBillboards()
+    local map = Workspace:FindFirstChild("Map")
+    if not map then return end
+    
+    local folderNames = {"Gens", "Generators", "Generator"}
+    for _, folderName in pairs(folderNames) do
+        local folder = map:FindFirstChild(folderName)
+        if folder then
+            for _, gen in pairs(folder:GetChildren()) do
+                if gen.Name:match("Generator") then
+                    local hitbox = gen:FindFirstChild("HitBox")
+                    if hitbox and hitbox:IsA("BasePart") then
+                        local existing = hitbox:FindFirstChild("GeneratorBillboard")
+                        if existing then
+                            existing:Destroy()
+                        end
+                        
+                        local hasPoints = false
+                        for _, child in pairs(gen:GetChildren()) do
+                            if child.Name:match("GeneratorPoint") then
+                                hasPoints = true
+                                break
+                            end
+                        end
+                        
+                        local billboard = Instance.new("BillboardGui")
+                        billboard.Name = "GeneratorBillboard"
+                        billboard.Adornee = hitbox
+                        billboard.Size = UDim2.new(0, 80, 0, 30)
+                        billboard.StudsOffset = Vector3.new(0, 2, 0)
+                        billboard.MaxDistance = 9999
+                        billboard.AlwaysOnTop = true
+                        billboard.Parent = hitbox
+                        
+                        local frame = Instance.new("Frame")
+                        frame.Size = UDim2.new(1, 0, 1, 0)
+                        frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                        frame.BackgroundTransparency = 0.5
+                        frame.BorderSizePixel = 2
+                        if hasPoints then
+                            frame.BorderColor3 = Color3.fromRGB(0, 255, 0)
+                        else
+                            frame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+                        end
+                        frame.Parent = billboard
+                        
+                        local label = Instance.new("TextLabel")
+                        label.Size = UDim2.new(1, 0, 1, 0)
+                        label.BackgroundTransparency = 1
+                        label.Text = "机子"
+                        if hasPoints then
+                            label.TextColor3 = Color3.fromRGB(0, 255, 0)
+                        else
+                            label.TextColor3 = Color3.fromRGB(255, 0, 0)
+                        end
+                        label.TextSize = 20
+                        label.Font = Enum.Font.GothamBold
+                        label.TextScaled = true
+                        label.Parent = frame
+                    end
+                end
+            end
+        end
+    end
+end
+
+createGUI()
+
+RunService.Heartbeat:Connect(function()
+    updateButtonVisibility()
+    createHitBoxBillboards()
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(10)
+        checkAndRecreateGUI()
+    end
+end)
