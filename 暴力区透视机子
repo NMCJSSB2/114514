@@ -10,6 +10,7 @@ local gui = nil
 local btn = nil
 local currentTarget = nil
 local currentState = false
+local lastGenCount = 0
 
 local function createGUI()
     if gui then
@@ -62,7 +63,7 @@ local function getAllGeneratorPoints()
     local map = Workspace:FindFirstChild("Map")
     if not map then return points end
     
-    local folderNames = {"Gens", "Generators", "Generator"}
+    local folderNames = {"Gens", "Generators"}
     for _, folderName in pairs(folderNames) do
         local folder = map:FindFirstChild(folderName)
         if folder then
@@ -82,6 +83,25 @@ local function getAllGeneratorPoints()
         end
     end
     return points
+end
+
+local function getGeneratorCount()
+    local count = 0
+    local map = Workspace:FindFirstChild("Map")
+    if not map then return count end
+    
+    local folderNames = {"Gens", "Generators"}
+    for _, folderName in pairs(folderNames) do
+        local folder = map:FindFirstChild(folderName)
+        if folder then
+            for _, gen in pairs(folder:GetChildren()) do
+                if gen.Name:match("Generator") then
+                    count = count + 1
+                end
+            end
+        end
+    end
+    return count
 end
 
 local function getClosestGeneratorPoint()
@@ -138,7 +158,7 @@ local function createHitBoxBillboards()
     local map = Workspace:FindFirstChild("Map")
     if not map then return end
     
-    local folderNames = {"Gens", "Generators", "Generator"}
+    local folderNames = {"Gens", "Generators"}
     for _, folderName in pairs(folderNames) do
         local folder = map:FindFirstChild(folderName)
         if folder then
@@ -183,7 +203,7 @@ local function createHitBoxBillboards()
                         local label = Instance.new("TextLabel")
                         label.Size = UDim2.new(1, 0, 1, 0)
                         label.BackgroundTransparency = 1
-                        label.Text = "机子"
+                        label.Text = "⚡ 机子"
                         if hasPoints then
                             label.TextColor3 = Color3.fromRGB(0, 255, 0)
                         else
@@ -200,11 +220,26 @@ local function createHitBoxBillboards()
     end
 end
 
+local function checkGeneratorChanges()
+    local currentCount = getGeneratorCount()
+    if currentCount ~= lastGenCount then
+        lastGenCount = currentCount
+        if gui then
+            gui:Destroy()
+            gui = nil
+            btn = nil
+        end
+        createGUI()
+    end
+end
+
 createGUI()
+lastGenCount = getGeneratorCount()
 
 RunService.Heartbeat:Connect(function()
     updateButtonVisibility()
     createHitBoxBillboards()
+    checkGeneratorChanges()
 end)
 
 task.spawn(function()
