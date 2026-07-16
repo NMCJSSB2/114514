@@ -26,7 +26,7 @@ local function createGUI()
     
     btn = Instance.new("ImageButton")
     btn.Size = UDim2.new(0, 60, 0, 60)
-    btn.Position = UDim2.new(0, 20, 0.5, -30)
+    btn.Position = UDim2.new(0.67, 0, 0.8, -60)
     btn.BackgroundTransparency = 1
     btn.Image = "rbxassetid://101967215154019"
     btn.Visible = false
@@ -58,12 +58,16 @@ local function checkAndRecreateGUI()
     end
 end
 
+local function getFolderNames()
+    return {"Gens", "Generators", "new Generators"}
+end
+
 local function getAllGeneratorPoints()
     local points = {}
     local map = Workspace:FindFirstChild("Map")
     if not map then return points end
     
-    local folderNames = {"Gens", "Generators"}
+    local folderNames = getFolderNames()
     for _, folderName in pairs(folderNames) do
         local folder = map:FindFirstChild(folderName)
         if folder then
@@ -90,7 +94,7 @@ local function getGeneratorCount()
     local map = Workspace:FindFirstChild("Map")
     if not map then return count end
     
-    local folderNames = {"Gens", "Generators"}
+    local folderNames = getFolderNames()
     for _, folderName in pairs(folderNames) do
         local folder = map:FindFirstChild(folderName)
         if folder then
@@ -158,7 +162,7 @@ local function createHitBoxBillboards()
     local map = Workspace:FindFirstChild("Map")
     if not map then return end
     
-    local folderNames = {"Gens", "Generators"}
+    local folderNames = getFolderNames()
     for _, folderName in pairs(folderNames) do
         local folder = map:FindFirstChild(folderName)
         if folder then
@@ -203,7 +207,7 @@ local function createHitBoxBillboards()
                         local label = Instance.new("TextLabel")
                         label.Size = UDim2.new(1, 0, 1, 0)
                         label.BackgroundTransparency = 1
-                        label.Text = "⚡ 机子"
+                        label.Text = "机子"
                         if hasPoints then
                             label.TextColor3 = Color3.fromRGB(0, 255, 0)
                         else
