@@ -8,6 +8,7 @@ local repairEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Gene
 
 local gui = nil
 local btn = nil
+local btnIcon = nil
 local currentTarget = nil
 local currentState = false
 local lastGenCount = 0
@@ -17,6 +18,7 @@ local function createGUI()
         gui:Destroy()
         gui = nil
         btn = nil
+        btnIcon = nil
     end
     
     gui = Instance.new("ScreenGui")
@@ -28,9 +30,18 @@ local function createGUI()
     btn.Size = UDim2.new(0, 60, 0, 60)
     btn.Position = UDim2.new(0.67, 0, 0.8, -60)
     btn.BackgroundTransparency = 1
-    btn.Image = "rbxassetid://101967215154019"
+    btn.Image = "rbxassetid://91223269317292"
+    btn.ImageTransparency = 0.5
     btn.Visible = false
     btn.Parent = gui
+    
+    btnIcon = Instance.new("ImageLabel")
+    btnIcon.Size = UDim2.new(1, 0, 1, 0)
+    btnIcon.Position = UDim2.new(0, 0, 0, 0)
+    btnIcon.BackgroundTransparency = 1
+    btnIcon.Image = "rbxassetid://101967215154019"
+    btnIcon.ImageTransparency = 0.3
+    btnIcon.Parent = btn
     
     btn.MouseButton1Click:Connect(function()
         if not currentTarget then return end
@@ -59,7 +70,7 @@ local function checkAndRecreateGUI()
 end
 
 local function getFolderNames()
-    return {"Gens", "Generators", "new Generators"}
+    return {"Gens", "Generators", "new Generators","Generator"}
 end
 
 local function getAllGeneratorPoints()
@@ -186,37 +197,23 @@ local function createHitBoxBillboards()
                         local billboard = Instance.new("BillboardGui")
                         billboard.Name = "GeneratorBillboard"
                         billboard.Adornee = hitbox
-                        billboard.Size = UDim2.new(0, 80, 0, 30)
+                        billboard.Size = UDim2.new(0, 30, 0, 30)
                         billboard.StudsOffset = Vector3.new(0, 2, 0)
                         billboard.MaxDistance = 9999
                         billboard.AlwaysOnTop = true
                         billboard.Parent = hitbox
                         
-                        local frame = Instance.new("Frame")
-                        frame.Size = UDim2.new(1, 0, 1, 0)
-                        frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-                        frame.BackgroundTransparency = 0.5
-                        frame.BorderSizePixel = 2
+                        local imageLabel = Instance.new("ImageLabel")
+                        imageLabel.Size = UDim2.new(1, 0, 1, 0)
+                        imageLabel.BackgroundTransparency = 1
+                        imageLabel.Image = "rbxassetid://116363952886564"
+                        imageLabel.ImageTransparency = 0.5
                         if hasPoints then
-                            frame.BorderColor3 = Color3.fromRGB(0, 255, 0)
+                            imageLabel.ImageColor3 = Color3.fromRGB(0, 255, 0)
                         else
-                            frame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+                            imageLabel.ImageColor3 = Color3.fromRGB(255, 0, 0)
                         end
-                        frame.Parent = billboard
-                        
-                        local label = Instance.new("TextLabel")
-                        label.Size = UDim2.new(1, 0, 1, 0)
-                        label.BackgroundTransparency = 1
-                        label.Text = "机子"
-                        if hasPoints then
-                            label.TextColor3 = Color3.fromRGB(0, 255, 0)
-                        else
-                            label.TextColor3 = Color3.fromRGB(255, 0, 0)
-                        end
-                        label.TextSize = 20
-                        label.Font = Enum.Font.GothamBold
-                        label.TextScaled = true
-                        label.Parent = frame
+                        imageLabel.Parent = billboard
                     end
                 end
             end
@@ -232,6 +229,7 @@ local function checkGeneratorChanges()
             gui:Destroy()
             gui = nil
             btn = nil
+            btnIcon = nil
         end
         createGUI()
     end
