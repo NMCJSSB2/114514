@@ -1,0 +1,132 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+local BUTTON_SIZE = 60
+local BUTTON_POSITION = UDim2.new(0.9, 0, 0.5, -110)
+local ICON_ID = "rbxassetid://91223269317292"
+local DECORATION_ID = "rbxassetid://135993999086444"
+
+local ScreenGui = nil
+local HealButton = nil
+local Decoration = nil
+
+local function createButton()
+    if ScreenGui then ScreenGui:Destroy() end
+    
+    ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "HealButtonGUI"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = player:WaitForChild("PlayerGui")
+    
+    HealButton = Instance.new("ImageButton")
+    HealButton.Name = "HealButton"
+    HealButton.Size = UDim2.new(0, BUTTON_SIZE, 0, BUTTON_SIZE)
+    HealButton.Position = BUTTON_POSITION
+    HealButton.BackgroundTransparency = 1
+    HealButton.Image = ICON_ID
+    HealButton.ImageColor3 = Color3.fromRGB(0, 255, 0)
+    HealButton.ImageTransparency = 0.5
+    HealButton.ScaleType = Enum.ScaleType.Fit
+    HealButton.Parent = ScreenGui
+    
+    Decoration = Instance.new("ImageLabel")
+    Decoration.Name = "Decoration"
+    Decoration.Size = UDim2.new(1, -10, 1, -10)
+    Decoration.Position = UDim2.new(0.5, 0, 0.5, 0)
+    Decoration.AnchorPoint = Vector2.new(0.5, 0.5)
+    Decoration.BackgroundTransparency = 1
+    Decoration.Image = DECORATION_ID
+    Decoration.ScaleType = Enum.ScaleType.Fit
+    Decoration.Parent = HealButton
+    
+    HealButton.MouseButton1Click:Connect(function()
+        local character = player.Character
+        if not character then 
+            return 
+        end
+        
+        local humanoid = character:FindFirstChild("Humanoid")
+        if not humanoid then 
+            return 
+        end
+        
+        if humanoid.Health > 60 then
+            return
+        end
+        
+        local args = {
+            character:WaitForChild("HumanoidRootPart"),
+            true
+        }
+        ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Healing"):WaitForChild("HealEvent"):FireServer(unpack(args))
+    end)
+end
+
+local function updateButtonVisibility()
+    if not HealButton then return end
+    
+    local character = player.Character
+    if not character then 
+        HealButton.Visible = false
+        return 
+    end
+    
+    local team = player.Team
+    if not team or team.Name ~= "Survivors" then
+        HealButton.Visible = false
+        return
+    end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then
+        HealButton.Visible = false
+        return
+    end
+    
+    HealButton.Visible = humanoid.Health <= 60
+end
+
+local function onCharacterAdded()
+    createButton()
+    task.wait(0.5)
+    updateButtonVisibility()
+end
+
+local function onTeamChanged()
+    updateButtonVisibility()
+end
+
+local function onHealthChanged()
+    updateButtonVisibility()
+end
+
+local function setup()
+    if player.Character then
+        onCharacterAdded()
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.HealthChanged:Connect(onHealthChanged)
+        end
+    else
+        player.CharacterAdded:Connect(onCharacterAdded)
+    end
+    
+    player:GetPropertyChangedSignal("Team"):Connect(onTeamChanged)
+    
+    local function checkButtonExists()
+        if not ScreenGui or not ScreenGui:FindFirstChild("HealButton") then
+            createButton()
+            task.wait(0.5)
+            updateButtonVisibility()
+        end
+    end
+    
+    game:GetService("RunService").Heartbeat:Connect(function()
+        if player.Character then
+            checkButtonExists()
+        end
+    end)
+end
+
+setup()
