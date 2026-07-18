@@ -1,12 +1,12 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local function createGUI()
-    -- 检查是否已经存在
     if playerGui:FindFirstChild("AutoAttackGUI") then
         return
     end
@@ -16,70 +16,89 @@ local function createGUI()
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
 
-    -- 按钮1：基础攻击
     local button1 = Instance.new("ImageButton")
     button1.Name = "BasicAttack"
     button1.Size = UDim2.new(0, 60, 0, 60)
-    button1.Position = UDim2.new(0, 10, 0, 10)
+    button1.Position = UDim2.new(0.67, 0, 0.8, -45)
     button1.BackgroundTransparency = 1
     button1.Image = "rbxassetid://91223269317292"
     button1.Parent = screenGui
 
-    -- 按钮2：腐化
+    local icon1 = Instance.new("ImageLabel")
+    icon1.Name = "Icon"
+    icon1.Size = UDim2.new(0, 40, 0, 40)
+    icon1.Position = UDim2.new(0.5, -20, 0.5, -20)
+    icon1.BackgroundTransparency = 1
+    icon1.Image = "rbxassetid://132578184386101"
+    icon1.ImageTransparency = 0
+    icon1.Parent = button1
+
     local button2 = Instance.new("ImageButton")
-    button2.Name = "Corrupt"
+    button2.Name = "AutoAttack"
     button2.Size = UDim2.new(0, 60, 0, 60)
-    button2.Position = UDim2.new(0, 10, 0, 80)
+    button2.Position = UDim2.new(0, 30, 0.5, -60)
     button2.BackgroundTransparency = 1
     button2.Image = "rbxassetid://91223269317292"
+    button2.ImageColor3 = Color3.fromRGB(255, 0, 0)
     button2.Parent = screenGui
 
-    -- 拖拽功能
-    local function makeDraggable(button)
-        local dragging = false
-        local dragOffset = Vector2.new(0, 0)
+    local icon2 = Instance.new("ImageLabel")
+    icon2.Name = "Icon"
+    icon2.Size = UDim2.new(0, 40, 0, 40)
+    icon2.Position = UDim2.new(0.5, -20, 0.5, -20)
+    icon2.BackgroundTransparency = 1
+    icon2.Image = "rbxassetid://132578184386101"
+    icon2.ImageTransparency = 0
+    icon2.Parent = button2
 
-        button.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-                local mousePos = player:GetMouse()
-                dragOffset = Vector2.new(mousePos.X - button.AbsolutePosition.X, mousePos.Y - button.AbsolutePosition.Y)
-            end
+    local debounce = false
+
+    button1.MouseButton1Down:Connect(function()
+        if debounce then return end
+        debounce = true
+
+        local fadeIn = TweenService:Create(
+            button1,
+            TweenInfo.new(0.08, Enum.EasingStyle.Linear),
+            {
+                ImageTransparency = 0
+            }
+        )
+
+        local fadeOut = TweenService:Create(
+            button1,
+            TweenInfo.new(0.15, Enum.EasingStyle.Linear),
+            {
+                ImageTransparency = 0.5
+            }
+        )
+
+        fadeIn:Play()
+        ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Attacks"):WaitForChild("BasicAttack"):FireServer()
+
+        fadeIn.Completed:Connect(function()
+            fadeOut:Play()
+            fadeOut.Completed:Connect(function()
+                debounce = false
+            end)
         end)
+    end)
 
-        button.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
-            end
-        end)
+    button1.ImageTransparency = 0.5
 
-        player:GetMouse().Move:Connect(function()
-            if dragging then
-                local mouse = player:GetMouse()
-                button.Position = UDim2.new(0, mouse.X - dragOffset.X, 0, mouse.Y - dragOffset.Y)
-            end
-        end)
-    end
-
-    makeDraggable(button1)
-    makeDraggable(button2)
-
-    local isAttackActive = false
-    local isCorruptActive = false
+    local isActive = false
     local attackConnection = nil
-    local corruptConnection = nil
 
-    -- 按钮1点击逻辑
-    button1.MouseButton1Click:Connect(function()
-        isAttackActive = not isAttackActive
+    button2.MouseButton1Click:Connect(function()
+        isActive = not isActive
         
-        if isAttackActive then
-            button1.ImageTransparency = 0
+        if isActive then
+            button2.ImageTransparency = 0
             attackConnection = RunService.Heartbeat:Connect(function()
                 ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Attacks"):WaitForChild("BasicAttack"):FireServer()
             end)
         else
-            button1.ImageTransparency = 0.5
+            button2.ImageTransparency = 0.5
             if attackConnection then
                 attackConnection:Disconnect()
                 attackConnection = nil
@@ -87,36 +106,14 @@ local function createGUI()
         end
     end)
 
-    -- 按钮2点击逻辑
-    button2.MouseButton1Click:Connect(function()
-        isCorruptActive = not isCorruptActive
-        
-        if isCorruptActive then
-            button2.ImageTransparency = 0
-            corruptConnection = RunService.Heartbeat:Connect(function()
-                ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Killers"):WaitForChild("Abysswalker"):WaitForChild("corrupt"):FireServer()
-            end)
-        else
-            button2.ImageTransparency = 0.5
-            if corruptConnection then
-                corruptConnection:Disconnect()
-                corruptConnection = nil
-            end
-        end
-    end)
-
-    -- 初始状态设为半透明表示关闭
-    button1.ImageTransparency = 0.5
     button2.ImageTransparency = 0.5
 end
 
--- 检测玩家队伍
 local function checkTeam()
     local team = player.Team
     if team and team.Name == "Killer" then
         createGUI()
     else
-        -- 如果不在Killer队伍，删除GUI
         local existingGUI = playerGui:FindFirstChild("AutoAttackGUI")
         if existingGUI then
             existingGUI:Destroy()
@@ -124,18 +121,14 @@ local function checkTeam()
     end
 end
 
--- 初始检查
 checkTeam()
 
--- 监听队伍变化
 player:GetPropertyChangedSignal("Team"):Connect(checkTeam)
 
--- 监听角色重生
 player.CharacterAdded:Connect(function(character)
     checkTeam()
 end)
 
--- 定期检测GUI是否存在
 task.spawn(function()
     while true do
         task.wait(2)
