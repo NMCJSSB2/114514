@@ -4,4 +4,5 @@ local currentPlaceId = game.PlaceId
 if currentPlaceId == targetPlaceId then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E6%9A%B4%E5%8A%9B%E5%8C%BA%E9%80%8F%E8%A7%86%E6%9C%BA%E5%AD%90"))()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E6%9A%B4%E5%8A%9B%E5%8C%BA%E6%9D%80%E6%89%8B"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E6%9A%B4%E5%8A%9B%E5%8C%BA%E6%B2%BB%E7%96%97"))()
 end
