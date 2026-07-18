@@ -28,7 +28,7 @@ local function createGUI()
     
     btn = Instance.new("ImageButton")
     btn.Size = UDim2.new(0, 60, 0, 60)
-    btn.Position = UDim2.new(0.67, 0, 0.8, -60)
+    btn.Position = UDim2.new(0.67, 0, 0.8, -45)
     btn.BackgroundTransparency = 1
     btn.Image = "rbxassetid://91223269317292"
     btn.ImageTransparency = 0.5
