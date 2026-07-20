@@ -17,7 +17,7 @@ button.Name = "AngstromAbility"
 button.Size = UDim2.new(0.05, 0, 0.125, 0)
 button.Position = UDim2.new(0.75, 0, 0.4, 15)
 button.BackgroundTransparency = 1
-button.Image = "rbxassetid://133916959254281"
+button.Image = "rbxassetid://101432286813001"
 button.ImageColor3 = Color3.fromRGB(100, 255, 100)
 button.Parent = screenGui
 
