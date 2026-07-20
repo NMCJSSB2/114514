@@ -1,0 +1,119 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local camera = workspace.CurrentCamera
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AbilityGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local button = Instance.new("ImageButton")
+button.Name = "AngstromAbility"
+button.Size = UDim2.new(0.05, 0, 0.125, 0)
+button.Position = UDim2.new(0.75, 0, 0.4, 15)
+button.BackgroundTransparency = 1
+button.Image = "rbxassetid://133916959254281"
+button.ImageColor3 = Color3.fromRGB(100, 255, 100)
+button.Parent = screenGui
+
+local function getClosestPlayerInCrosshair()
+    local character = player.Character
+    if not character then return nil end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return nil end
+    
+    local viewportSize = camera.ViewportSize
+    local screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+    local radius = 50
+    
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    
+    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+        if otherPlayer ~= player then
+            local otherCharacter = otherPlayer.Character
+            if otherCharacter then
+                local otherRootPart = otherCharacter:FindFirstChild("HumanoidRootPart")
+                local otherHumanoid = otherCharacter:FindFirstChild("Humanoid")
+                
+                if otherRootPart and otherHumanoid and otherHumanoid.Health > 0 then
+                    local worldDistance = (rootPart.Position - otherRootPart.Position).Magnitude
+                    
+                    if worldDistance <= 200 then
+                        local screenPos, onScreen = camera:WorldToViewportPoint(otherRootPart.Position)
+                        
+                        if onScreen then
+                            local screenPoint = Vector2.new(screenPos.X, screenPos.Y)
+                            local distanceFromCenter = (screenPoint - screenCenter).Magnitude
+                            
+                            if distanceFromCenter <= radius then
+                                if distanceFromCenter < closestDistance then
+                                    closestDistance = distanceFromCenter
+                                    closestPlayer = otherPlayer
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    return closestPlayer
+end
+
+local function getClosestPlayerOverall()
+    local character = player.Character
+    if not character then return nil end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return nil end
+    
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    
+    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+        if otherPlayer ~= player then
+            local otherCharacter = otherPlayer.Character
+            if otherCharacter then
+                local otherRootPart = otherCharacter:FindFirstChild("HumanoidRootPart")
+                local otherHumanoid = otherCharacter:FindFirstChild("Humanoid")
+                
+                if otherRootPart and otherHumanoid and otherHumanoid.Health > 0 then
+                    local distance = (rootPart.Position - otherRootPart.Position).Magnitude
+                    
+                    if distance <= 200 and distance < closestDistance then
+                        closestDistance = distance
+                        closestPlayer = otherPlayer
+                    end
+                end
+            end
+        end
+    end
+    
+    return closestPlayer
+end
+
+button.MouseButton1Click:Connect(function()
+    local targetPlayer = getClosestPlayerInCrosshair()
+    
+    if not targetPlayer then
+        targetPlayer = getClosestPlayerOverall()
+    end
+    
+    if targetPlayer and targetPlayer.Character then
+        local args = {
+            "Angstrom",
+            "Clamp",
+            targetPlayer.Character,
+            "VariantPunch"
+        }
+        ReplicatedStorage:WaitForChild("game_folder"):WaitForChild("remote"):WaitForChild("ability_remote"):FireServer(unpack(args))
+    end
+end)
