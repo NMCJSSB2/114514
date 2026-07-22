@@ -12,7 +12,9 @@ local HealButton = nil
 local Decoration = nil
 
 local function createButton()
-    if ScreenGui then ScreenGui:Destroy() end
+    if playerGui:FindFirstChild("HealButtonGUI") then
+        return
+    end
     
     ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "HealButtonGUI"
@@ -28,6 +30,7 @@ local function createButton()
     HealButton.ImageColor3 = Color3.fromRGB(0, 255, 0)
     HealButton.ImageTransparency = 0.5
     HealButton.ScaleType = Enum.ScaleType.Fit
+    HealButton.Visible = false
     HealButton.Parent = ScreenGui
     
     Decoration = Instance.new("ImageLabel")
@@ -87,10 +90,13 @@ local function updateButtonVisibility()
     HealButton.Visible = humanoid.Health <= 60
 end
 
-local function onCharacterAdded()
+local function onCharacterAdded(character)
     createButton()
     task.wait(0.5)
     updateButtonVisibility()
+    
+    local humanoid = character:WaitForChild("Humanoid")
+    humanoid.HealthChanged:Connect(onHealthChanged)
 end
 
 local function onTeamChanged()
@@ -102,29 +108,27 @@ local function onHealthChanged()
 end
 
 local function setup()
+    createButton()
+    
     if player.Character then
-        onCharacterAdded()
         local humanoid = player.Character:FindFirstChild("Humanoid")
         if humanoid then
             humanoid.HealthChanged:Connect(onHealthChanged)
         end
-    else
-        player.CharacterAdded:Connect(onCharacterAdded)
+        updateButtonVisibility()
     end
     
+    player.CharacterAdded:Connect(onCharacterAdded)
     player:GetPropertyChangedSignal("Team"):Connect(onTeamChanged)
     
-    local function checkButtonExists()
-        if not ScreenGui or not ScreenGui:FindFirstChild("HealButton") then
-            createButton()
-            task.wait(0.5)
-            updateButtonVisibility()
-        end
-    end
-    
-    game:GetService("RunService").Heartbeat:Connect(function()
-        if player.Character then
-            checkButtonExists()
+    task.spawn(function()
+        while true do
+            task.wait(2)
+            if not playerGui:FindFirstChild("HealButtonGUI") then
+                createButton()
+                task.wait(0.5)
+                updateButtonVisibility()
+            end
         end
     end)
 end
