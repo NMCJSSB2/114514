@@ -11,15 +11,12 @@ local DECORATION_ID = "rbxassetid://135993999086444"
 
 local gui = nil
 local HealButton = nil
-local Decoration = nil
-local healthChangedConnection = nil
 
 local function createButton()
     if gui then
         gui:Destroy()
         gui = nil
         HealButton = nil
-        Decoration = nil
     end
     
     gui = Instance.new("ScreenGui")
@@ -39,8 +36,7 @@ local function createButton()
     HealButton.Visible = false
     HealButton.Parent = gui
     
-    Decoration = Instance.new("ImageLabel")
-    Decoration.Name = "Decoration"
+    local Decoration = Instance.new("ImageLabel")
     Decoration.Size = UDim2.new(1, -10, 1, -10)
     Decoration.Position = UDim2.new(0.5, 0, 0.5, 0)
     Decoration.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -72,35 +68,23 @@ local function createButton()
     end)
 end
 
-local function checkAndRecreateGUI()
+player.CharacterAdded:Connect(function(character)
+    createButton()
+end)
+
+createButton()
+
+RunService.Heartbeat:Connect(function()
     if not gui or not gui.Parent then
         createButton()
     end
-end
-
-local function bindHealthChanged(character)
-    if healthChangedConnection then
-        healthChangedConnection:Disconnect()
-        healthChangedConnection = nil
-    end
-    
-    local humanoid = character:FindFirstChild("Humanoid")
-    if humanoid then
-        healthChangedConnection = humanoid.HealthChanged:Connect(function()
-            updateButtonVisibility()
-        end)
-    end
-end
-
-local function updateButtonVisibility()
-    checkAndRecreateGUI()
     
     if not HealButton then return end
     
     local character = player.Character
-    if not character then 
+    if not character then
         HealButton.Visible = false
-        return 
+        return
     end
     
     local humanoid = character:FindFirstChild("Humanoid")
@@ -110,28 +94,4 @@ local function updateButtonVisibility()
     end
     
     HealButton.Visible = humanoid.Health <= 60
-end
-
-player.CharacterAdded:Connect(function(character)
-    task.wait(1)
-    bindHealthChanged(character)
-    updateButtonVisibility()
-end)
-
-createButton()
-
-if player.Character then
-    bindHealthChanged(player.Character)
-    updateButtonVisibility()
-end
-
-RunService.Heartbeat:Connect(function()
-    updateButtonVisibility()
-end)
-
-task.spawn(function()
-    while true do
-        task.wait(10)
-        checkAndRecreateGUI()
-    end
 end)
