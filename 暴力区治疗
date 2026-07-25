@@ -84,10 +84,12 @@ local function bindHealthChanged(character)
         healthChangedConnection = nil
     end
     
-    local humanoid = character:WaitForChild("Humanoid")
-    healthChangedConnection = humanoid.HealthChanged:Connect(function()
-        updateButtonVisibility()
-    end)
+    local humanoid = character:FindFirstChild("Humanoid")
+    if humanoid then
+        healthChangedConnection = humanoid.HealthChanged:Connect(function()
+            updateButtonVisibility()
+        end)
+    end
 end
 
 local function updateButtonVisibility()
@@ -101,12 +103,6 @@ local function updateButtonVisibility()
         return 
     end
     
-    local team = player.Team
-    if not team or team.Name ~= "Survivors" then
-        HealButton.Visible = false
-        return
-    end
-    
     local humanoid = character:FindFirstChild("Humanoid")
     if not humanoid then
         HealButton.Visible = false
@@ -117,12 +113,8 @@ local function updateButtonVisibility()
 end
 
 player.CharacterAdded:Connect(function(character)
+    task.wait(1)
     bindHealthChanged(character)
-    task.wait(0.5)
-    updateButtonVisibility()
-end)
-
-player:GetPropertyChangedSignal("Team"):Connect(function()
     updateButtonVisibility()
 end)
 
