@@ -1,25 +1,31 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
 local BUTTON_SIZE = 60
 local BUTTON_POSITION = UDim2.new(0.9, 0, 0.5, -110)
 local ICON_ID = "rbxassetid://91223269317292"
 local DECORATION_ID = "rbxassetid://135993999086444"
 
-local ScreenGui = nil
+local gui = nil
 local HealButton = nil
 local Decoration = nil
+local healthChangedConnection = nil
 
 local function createButton()
-    if playerGui:FindFirstChild("HealButtonGUI") then
-        return
+    if gui then
+        gui:Destroy()
+        gui = nil
+        HealButton = nil
+        Decoration = nil
     end
     
-    ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "HealButtonGUI"
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.Parent = player:WaitForChild("PlayerGui")
+    gui = Instance.new("ScreenGui")
+    gui.Name = "HealButtonGUI"
+    gui.ResetOnSpawn = false
+    gui.Parent = playerGui
     
     HealButton = Instance.new("ImageButton")
     HealButton.Name = "HealButton"
@@ -31,7 +37,7 @@ local function createButton()
     HealButton.ImageTransparency = 0.5
     HealButton.ScaleType = Enum.ScaleType.Fit
     HealButton.Visible = false
-    HealButton.Parent = ScreenGui
+    HealButton.Parent = gui
     
     Decoration = Instance.new("ImageLabel")
     Decoration.Name = "Decoration"
@@ -66,7 +72,27 @@ local function createButton()
     end)
 end
 
+local function checkAndRecreateGUI()
+    if not gui or not gui.Parent then
+        createButton()
+    end
+end
+
+local function bindHealthChanged(character)
+    if healthChangedConnection then
+        healthChangedConnection:Disconnect()
+        healthChangedConnection = nil
+    end
+    
+    local humanoid = character:WaitForChild("Humanoid")
+    healthChangedConnection = humanoid.HealthChanged:Connect(function()
+        updateButtonVisibility()
+    end)
+end
+
 local function updateButtonVisibility()
+    checkAndRecreateGUI()
+    
     if not HealButton then return end
     
     local character = player.Character
@@ -90,47 +116,30 @@ local function updateButtonVisibility()
     HealButton.Visible = humanoid.Health <= 60
 end
 
-local function onCharacterAdded(character)
-    createButton()
+player.CharacterAdded:Connect(function(character)
+    bindHealthChanged(character)
     task.wait(0.5)
     updateButtonVisibility()
-    
-    local humanoid = character:WaitForChild("Humanoid")
-    humanoid.HealthChanged:Connect(onHealthChanged)
-end
+end)
 
-local function onTeamChanged()
+player:GetPropertyChangedSignal("Team"):Connect(function()
+    updateButtonVisibility()
+end)
+
+createButton()
+
+if player.Character then
+    bindHealthChanged(player.Character)
     updateButtonVisibility()
 end
 
-local function onHealthChanged()
+RunService.Heartbeat:Connect(function()
     updateButtonVisibility()
-end
+end)
 
-local function setup()
-    createButton()
-    
-    if player.Character then
-        local humanoid = player.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.HealthChanged:Connect(onHealthChanged)
-        end
-        updateButtonVisibility()
+task.spawn(function()
+    while true do
+        task.wait(10)
+        checkAndRecreateGUI()
     end
-    
-    player.CharacterAdded:Connect(onCharacterAdded)
-    player:GetPropertyChangedSignal("Team"):Connect(onTeamChanged)
-    
-    task.spawn(function()
-        while true do
-            task.wait(2)
-            if not playerGui:FindFirstChild("HealButtonGUI") then
-                createButton()
-                task.wait(0.5)
-                updateButtonVisibility()
-            end
-        end
-    end)
-end
-
-setup()
+end)
