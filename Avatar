@@ -1,0 +1,251 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local remoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+
+local skills = {"Aero", "Terra", "Flame", "Aqua"}
+local currentIndex = 1
+local flameCounter = 0
+local isEnabled = false
+local currentAnimationTrack = nil
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "BendingGUI"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+local toggleButton = Instance.new("ImageButton")
+toggleButton.Size = UDim2.new(0, 60, 0, 60)
+toggleButton.Position = UDim2.new(0, 10, 0.5, -30)
+toggleButton.BackgroundTransparency = 1
+toggleButton.Image = "rbxassetid://95931571010196"
+toggleButton.ImageTransparency = 0.5
+toggleButton.Parent = gui
+
+local animationId = "rbxassetid://90235844861528"
+
+local function playAnimation()
+    if currentAnimationTrack then
+        currentAnimationTrack:Stop()
+        currentAnimationTrack = nil
+    end
+    
+    local character = player.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    local animator = humanoid:FindFirstChild("Animator")
+    if not animator then
+        animator = Instance.new("Animator")
+        animator.Parent = humanoid
+    end
+    
+    local animation = Instance.new("Animation")
+    animation.AnimationId = animationId
+    
+    currentAnimationTrack = animator:LoadAnimation(animation)
+    currentAnimationTrack:Play()
+end
+
+local function stopAnimation()
+    if currentAnimationTrack then
+        currentAnimationTrack:Stop()
+        currentAnimationTrack = nil
+    end
+end
+
+task.spawn(function()
+    while true do
+        if isEnabled then
+            playAnimation()
+            if currentAnimationTrack then
+                currentAnimationTrack.Ended:Wait()
+                currentAnimationTrack = nil
+            end
+        end
+        task.wait()
+    end
+end)
+
+toggleButton.MouseButton1Click:Connect(function()
+    isEnabled = not isEnabled
+    
+    if isEnabled then
+        toggleButton.ImageTransparency = 0
+    else
+        toggleButton.ImageTransparency = 0.5
+        stopAnimation()
+    end
+end)
+
+while true do
+    if isEnabled then
+        local character = player.Character
+        if character then
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                local skill = skills[currentIndex]
+                
+                local args = {
+                    {
+                        {
+                            Action = true,
+                            Info = "Switch",
+                            Values = {
+                                skill
+                            }
+                        },
+                        "\005"
+                    }
+                }
+                remoteEvent:FireServer(unpack(args))
+                
+                if skill == "Aero" then
+                    local args2 = {
+                        {
+                            {
+                                Info = "Bending",
+                                Action = true
+                            },
+                            "\005",
+                            {
+                                Values = {},
+                                Move = "Tempest",
+                                Element = "Aero"
+                            },
+                            "\003"
+                        }
+                    }
+                    remoteEvent:FireServer(unpack(args2))
+                    
+                    local args3 = {
+                        {
+                            {
+                                Info = "Bending",
+                                Action = true
+                            },
+                            "\005",
+                            {
+                                Values = {
+                                    rootPart.CFrame
+                                },
+                                Move = "AirVortex",
+                                Element = "Aero"
+                            },
+                            "\003"
+                        }
+                    }
+                    remoteEvent:FireServer(unpack(args3))
+                    
+                elseif skill == "Terra" then
+                    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+                        if otherPlayer ~= player then
+                            local otherCharacter = otherPlayer.Character
+                            if otherCharacter then
+                                local otherRootPart = otherCharacter:FindFirstChild("HumanoidRootPart")
+                                if otherRootPart then
+                                    local distance = (rootPart.Position - otherRootPart.Position).Magnitude
+                                    if distance <= 100 then
+                                        local randomAngle = math.random() * math.pi * 2
+                                        local offsetX = math.cos(randomAngle) * 20
+                                        local offsetZ = math.sin(randomAngle) * 20
+                                        local spawnPos = otherRootPart.Position + Vector3.new(offsetX, 0, offsetZ)
+                                        local direction = (otherRootPart.Position - spawnPos).Unit
+                                        
+                                        local spawnCFrame = CFrame.lookAt(spawnPos, spawnPos + direction)
+                                        
+                                        local args2 = {
+                                            {
+                                                {
+                                                    Values = {
+                                                        direction,
+                                                        spawnCFrame,
+                                                        {
+                                                            Color = Color3.new(0.4, 0.25, 0.15),
+                                                            Material = Enum.Material.Basalt
+                                                        }
+                                                    },
+                                                    Move = "EarthChunk",
+                                                    Element = "Terra"
+                                                },
+                                                "\003"
+                                            }
+                                        }
+                                        remoteEvent:FireServer(unpack(args2))
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    
+                elseif skill == "Flame" then
+                    flameCounter = flameCounter + 1
+                    if flameCounter >= 2 then
+                        local args2 = {
+                            {
+                                {
+                                    Info = "Bending",
+                                    Action = true
+                                },
+                                "\005",
+                                {
+                                    Values = {
+                                        rootPart.CFrame
+                                    },
+                                    Move = "FireSpin",
+                                    Element = "Flame"
+                                },
+                                "\003"
+                            }
+                        }
+                        remoteEvent:FireServer(unpack(args2))
+                        flameCounter = 0
+                    end
+                    
+                elseif skill == "Aqua" then
+                    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+                        if otherPlayer ~= player then
+                            local otherCharacter = otherPlayer.Character
+                            if otherCharacter then
+                                local otherRootPart = otherCharacter:FindFirstChild("HumanoidRootPart")
+                                if otherRootPart then
+                                    local distance = (rootPart.Position - otherRootPart.Position).Magnitude
+                                    if distance <= 50 then
+                                        local randomAngle = math.random() * math.pi * 2
+                                        local randomDirection = Vector3.new(math.cos(randomAngle), 0, math.sin(randomAngle))
+                                        local randomCFrame = CFrame.lookAt(otherRootPart.Position, otherRootPart.Position + randomDirection)
+                                        
+                                        local args2 = {
+                                            {
+                                                {
+                                                    Values = {
+                                                        randomCFrame
+                                                    },
+                                                    Move = "Ripple",
+                                                    Element = "Aqua"
+                                                },
+                                                "\003"
+                                            }
+                                        }
+                                        remoteEvent:FireServer(unpack(args2))
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        
+        currentIndex = currentIndex + 1
+        if currentIndex > #skills then
+            currentIndex = 1
+        end
+    end
+    
+    task.wait(0.1)
+end
+
