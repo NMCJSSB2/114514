@@ -4,7 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local DEFAULT_CONFIG = {
     Active = false,
-    Prediction = 0.145,
+    Prediction = 0.135,
     TargetPart = "HumanoidRootPart",
     Smoothness = 0.5,
     MaxRadius = 300,
