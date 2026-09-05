@@ -297,6 +297,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
-RunService.RenderStepped
+RunService.RenderStepped:Connect(function()
     UpdateAimLock()
 end)
