@@ -1,0 +1,186 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local character = player.Character or player.CharacterAdded:Wait()
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ProximitySwitch"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+
+local ICON_OFF = "rbxassetid://137183181294866"
+local ICON_ON = "rbxassetid://125296467145238"
+
+local mainButton = Instance.new("ImageButton")
+mainButton.Size = UDim2.new(0, 60, 0, 60)
+mainButton.Position = UDim2.new(0.5, -30, 0.5, -30)
+mainButton.BackgroundTransparency = 1
+mainButton.Image = ICON_OFF
+mainButton.ImageTransparency = 0
+mainButton.BorderSizePixel = 0
+mainButton.Parent = screenGui
+
+local CLICK_THRESHOLD = 5
+local dragging = false
+local dragInput, dragStart, startPos
+local dragDistance = 0
+local dragStartPos = nil
+local dragConnection = nil
+
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    mainButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                    startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+mainButton.InputBegan:Connect(function(input)
+    if input.UserInputState == Enum.UserInputState.Begin then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainButton.Position
+            dragDistance = 0
+            dragStartPos = input.Position
+            
+            if dragConnection then
+                dragConnection:Disconnect()
+            end
+            
+            dragConnection = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    if dragConnection then
+                        dragConnection:Disconnect()
+                        dragConnection = nil
+                    end
+                    if dragDistance <= CLICK_THRESHOLD then
+                        toggleSwitch()
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+mainButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+        if dragging and dragStartPos then
+            dragDistance = (input.Position - dragStartPos).Magnitude
+        end
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        updateDrag(input)
+    end
+end)
+
+local isOn = false
+local originalValues = {}
+local promptAddedConn = nil
+local loopTask = nil
+
+local function modifyPrompt(prompt)
+    if not originalValues[prompt] then
+        originalValues[prompt] = {
+            HoldDuration = prompt.HoldDuration,
+            MaxActivationDistance = prompt.MaxActivationDistance,
+            RequiresLineOfSight = prompt.RequiresLineOfSight,
+            Enabled = prompt.Enabled
+        }
+    end
+    prompt.HoldDuration = 0
+    prompt.MaxActivationDistance = 60
+    prompt.RequiresLineOfSight = false
+    prompt.Enabled = true
+end
+
+local function getPromptPosition(prompt)
+    local parent = prompt.Parent
+    if parent:IsA("BasePart") then
+        return parent.Position
+    elseif parent:IsA("Attachment") then
+        return parent.WorldPosition
+    end
+    return nil
+end
+
+local function autoInteract()
+    if not isOn or not character or not rootPart then return end
+    for _, prompt in pairs(Workspace:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") then
+            modifyPrompt(prompt)
+            local pos = getPromptPosition(prompt)
+            if pos and (pos - rootPart.Position).Magnitude <= 60 then
+                pcall(function()
+                    fireproximityprompt(prompt)
+                end)
+            end
+        end
+    end
+end
+
+local function enableProximity()
+    promptAddedConn = Workspace.DescendantAdded:Connect(function(descendant)
+        if descendant:IsA("ProximityPrompt") then
+            modifyPrompt(descendant)
+        end
+    end)
+
+    loopTask = task.spawn(function()
+        while isOn do
+            autoInteract()
+            task.wait(0.25)
+        end
+    end)
+end
+
+local function disableProximity()
+    if promptAddedConn then
+        promptAddedConn:Disconnect()
+        promptAddedConn = nil
+    end
+    if loopTask then
+        task.cancel(loopTask)
+        loopTask = nil
+    end
+
+    for prompt, values in pairs(originalValues) do
+        if prompt and prompt.Parent then
+            prompt.HoldDuration = values.HoldDuration
+            prompt.MaxActivationDistance = values.MaxActivationDistance
+            prompt.RequiresLineOfSight = values.RequiresLineOfSight
+            prompt.Enabled = values.Enabled
+        end
+    end
+    originalValues = {}
+end
+
+function toggleSwitch()
+    isOn = not isOn
+    if isOn then
+        mainButton.Image = ICON_ON
+        enableProximity()
+    else
+        mainButton.Image = ICON_OFF
+        disableProximity()
+    end
+end
+
+player.CharacterAdded:Connect(function(char)
+    if isOn then
+        isOn = false
+        mainButton.Image = ICON_OFF
+        disableProximity()
+    end
+
+    character = char
+    rootPart = character:WaitForChild("HumanoidRootPart")
+end)
