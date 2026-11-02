@@ -1,0 +1,354 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "DeathEffect"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = playerGui
+
+local screen = Instance.new("Frame")
+screen.Parent = gui
+screen.Size = UDim2.new(1, 0, 1, 0)
+screen.BackgroundColor3 = Color3.new(0, 0, 0)
+screen.BackgroundTransparency = 1
+screen.BorderSizePixel = 0
+
+local skipButton = nil
+
+local color = Lighting:FindFirstChild("DeathColor")
+if not color then
+	color = Instance.new("ColorCorrectionEffect")
+	color.Name = "DeathColor"
+	color.Parent = Lighting
+end
+color.Brightness = 0
+color.Saturation = 0
+color.Contrast = 0
+
+local blur = Lighting:FindFirstChild("DeathBlur")
+if not blur then
+	blur = Instance.new("BlurEffect")
+	blur.Name = "DeathBlur"
+	blur.Parent = Lighting
+end
+blur.Size = 0
+
+local sound = Instance.new("Sound")
+sound.Parent = gui
+sound.SoundId = "rbxassetid://108538164171474"
+sound.Volume = 1
+
+local countSound = Instance.new("Sound")
+countSound.Parent = gui
+countSound.SoundId = "rbxassetid://17619474123"
+countSound.Volume = 1
+
+local deathImage = Instance.new("ImageLabel")
+deathImage.Parent = screen
+deathImage.AnchorPoint = Vector2.new(0.5, 0.5)
+deathImage.Size = UDim2.new(0.4, 0, 0.4, 0)
+deathImage.Position = UDim2.new(0.5, 0, 0.5, 0)
+deathImage.BackgroundTransparency = 1
+deathImage.BorderSizePixel = 0
+deathImage.Image = "rbxassetid://93610138184556"
+deathImage.ImageTransparency = 1
+deathImage.ScaleType = Enum.ScaleType.Fit
+deathImage.Visible = false
+deathImage.ZIndex = 2
+
+local imageAspect = Instance.new("UIAspectRatioConstraint")
+imageAspect.AspectRatio = 1
+imageAspect.Parent = deathImage
+
+local imageGradient = Instance.new("UIGradient")
+imageGradient.Rotation = -90
+imageGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 191, 191)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+})
+imageGradient.Parent = deathImage
+
+local deathCounter = Instance.new("TextLabel")
+deathCounter.Parent = screen
+deathCounter.AnchorPoint = Vector2.new(0.5, 0.5)
+deathCounter.Size = UDim2.new(0.4, 0, 0.4, 0)
+deathCounter.Position = UDim2.new(0.5, 0, 0.5, 0)
+deathCounter.BackgroundTransparency = 1
+deathCounter.BorderSizePixel = 0
+deathCounter.Text = "0"
+deathCounter.TextColor3 = Color3.new(0, 0, 0)
+deathCounter.Font = Enum.Font.SpecialElite
+deathCounter.TextScaled = true
+deathCounter.TextTransparency = 1
+deathCounter.Visible = false
+deathCounter.ZIndex = 1
+
+local counterAspect = Instance.new("UIAspectRatioConstraint")
+counterAspect.AspectRatio = 1
+counterAspect.Parent = deathCounter
+
+local counterStroke = Instance.new("UIStroke")
+counterStroke.Color = Color3.new(1, 1, 1)
+counterStroke.Thickness = 2
+counterStroke.Transparency = 1
+counterStroke.Parent = deathCounter
+
+local counterGradient = Instance.new("UIGradient")
+counterGradient.Rotation = -90
+counterGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+})
+counterGradient.Parent = deathCounter
+
+local deathCount = 0
+local countToken = 0
+
+local imageTween = nil
+local counterTween = nil
+local strokeTween = nil
+
+local firstSpawn = true
+
+local function removeSkip()
+	if skipButton then
+		skipButton:Destroy()
+		skipButton = nil
+	end
+end
+
+local function hideAndReset()
+	if imageTween then
+		imageTween:Cancel()
+		imageTween = nil
+	end
+	if counterTween then
+		counterTween:Cancel()
+		counterTween = nil
+	end
+	if strokeTween then
+		strokeTween:Cancel()
+		strokeTween = nil
+	end
+
+	deathImage.Visible = false
+	deathImage.ImageTransparency = 1
+	deathImage.Position = UDim2.new(0.5, 0, 0.5, 0)
+
+	deathCounter.Visible = false
+	deathCounter.TextTransparency = 1
+	deathCounter.Position = UDim2.new(0.5, 0, 0.5, 0)
+	counterStroke.Transparency = 1
+end
+
+local function fadeOutAndReset()
+	if imageTween then
+		imageTween:Cancel()
+		imageTween = nil
+	end
+	if counterTween then
+		counterTween:Cancel()
+		counterTween = nil
+	end
+	if strokeTween then
+		strokeTween:Cancel()
+		strokeTween = nil
+	end
+
+	local info = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+	TweenService:Create(
+		deathImage,
+		info,
+		{
+			ImageTransparency = 1,
+			Position = UDim2.new(0.5, 0, 0.5, 0),
+		}
+	):Play()
+
+	counterTween = TweenService:Create(
+		deathCounter,
+		info,
+		{
+			TextTransparency = 1,
+			Position = UDim2.new(0.5, 0, 0.5, 0),
+		}
+	)
+	counterTween:Play()
+
+	strokeTween = TweenService:Create(
+		counterStroke,
+		info,
+		{ Transparency = 1 }
+	)
+	strokeTween:Play()
+
+	task.delay(0.2, function()
+		deathImage.Visible = false
+		deathCounter.Visible = false
+	end)
+end
+
+local function createSkip()
+	removeSkip()
+	skipButton = Instance.new("TextButton")
+	skipButton.Parent = gui
+	skipButton.Size = UDim2.new(0, 60, 1, 0)
+	skipButton.Position = UDim2.new(1, -60, 0, 0)
+	skipButton.BackgroundTransparency = 1
+	skipButton.Text = ""
+	skipButton.MouseButton1Click:Connect(function()
+		hideAndReset()
+		screen.BackgroundTransparency = 1
+		blur.Size = 0
+		removeSkip()
+	end)
+end
+
+local function playDeathImage()
+	if imageTween then
+		imageTween:Cancel()
+		imageTween = nil
+	end
+
+	deathImage.Position = UDim2.new(0.5, 0, 0.5, 0)
+	deathImage.ImageTransparency = 1
+	deathImage.Visible = true
+
+	imageTween = TweenService:Create(
+		deathImage,
+		TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{
+			ImageTransparency = 0,
+			Position = UDim2.new(0.4, 0, 0.5, 0),
+		}
+	)
+	imageTween:Play()
+end
+
+local function playDeathCounter()
+	if counterTween then
+		counterTween:Cancel()
+		counterTween = nil
+	end
+	if strokeTween then
+		strokeTween:Cancel()
+		strokeTween = nil
+	end
+
+	deathCounter.Position = UDim2.new(0.5, 0, 0.5, 0)
+	deathCounter.Visible = true
+	deathCounter.TextTransparency = 1
+	counterStroke.Transparency = 1
+
+	counterTween = TweenService:Create(
+		deathCounter,
+		TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{
+			TextTransparency = 0,
+			Position = UDim2.new(0.6, 0, 0.5, 0),
+		}
+	)
+	counterTween:Play()
+
+	strokeTween = TweenService:Create(
+		counterStroke,
+		TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Transparency = 0 }
+	)
+	strokeTween:Play()
+end
+
+local function bounceCounter()
+	local basePos = UDim2.new(0.6, 0, 0.5, 0)
+
+	deathCounter.Position = UDim2.new(0.6, 0, 0.5, 0)
+	TweenService:Create(
+		deathCounter,
+		TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Position = UDim2.new(0.6, 0, 0.51, 0) }
+	):Play()
+
+	task.delay(0.08, function()
+		TweenService:Create(
+			deathCounter,
+			TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{ Position = basePos }
+		):Play()
+	end)
+end
+
+local function onCharacter(character)
+	local humanoid = character:WaitForChild("Humanoid")
+
+	if not firstSpawn then
+		removeSkip()
+		fadeOutAndReset()
+		sound:Play()
+
+		TweenService:Create(
+			screen,
+			TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ BackgroundTransparency = 1 }
+		):Play()
+
+		TweenService:Create(
+			blur,
+			TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ Size = 0 }
+		):Play()
+	end
+
+	firstSpawn = false
+
+	humanoid.Died:Connect(function()
+		blur.Size = 24
+		color.Saturation = -10
+		color.Contrast = 100
+
+		screen.BackgroundColor3 = Color3.new(1, 1, 1)
+		screen.BackgroundTransparency = 0.8
+		task.wait(0.05)
+
+		screen.BackgroundColor3 = Color3.new(0, 0, 0)
+		screen.BackgroundTransparency = 0
+
+		color.Saturation = 0
+		color.Contrast = 0
+
+		playDeathImage()
+		playDeathCounter()
+
+		createSkip()
+
+		countToken = countToken + 1
+		local myToken = countToken
+
+		task.delay(0.35, function()
+			if myToken ~= countToken then
+				return
+			end
+			deathCount = deathCount + 1
+			deathCounter.Text = tostring(deathCount)
+			bounceCounter()
+		end)
+
+		task.delay(0.3, function()
+			if myToken ~= countToken then
+				return
+			end
+			countSound:Play()
+		end)
+	end)
+end
+
+if player.Character then
+	onCharacter(player.Character)
+end
+
+player.CharacterAdded:Connect(onCharacter)
