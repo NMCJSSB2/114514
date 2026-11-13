@@ -6,12 +6,57 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local repairEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Generator"):WaitForChild("RepairEvent")
 
+local ANIMATION_ID = "rbxassetid://127083088972311"
+
 local gui = nil
 local btn = nil
 local btnIcon = nil
 local currentTarget = nil
 local currentState = false
 local lastGenCount = 0
+
+local animator = nil
+local animTrack = nil
+
+local function stopAnimation()
+    if animTrack then
+        pcall(function()
+            animTrack:Stop()
+            animTrack:Destroy()
+        end)
+        animTrack = nil
+    end
+end
+
+local function playAnimation()
+    local character = LocalPlayer.Character
+    if not character then return end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+
+    animator = humanoid:FindFirstChildOfClass("Animator")
+    if not animator then
+        animator = Instance.new("Animator")
+        animator.Parent = humanoid
+    end
+
+    if animTrack and animTrack.IsPlaying then return end
+
+    local animation = Instance.new("Animation")
+    animation.AnimationId = ANIMATION_ID
+
+    local ok, track = pcall(function()
+        return animator:LoadAnimation(animation)
+    end)
+
+    if ok and track then
+        track.Looped = true
+        track.Priority = Enum.AnimationPriority.Action4
+        track:Play()
+        animTrack = track
+    end
+end
 
 local function createGUI()
     if gui then
@@ -44,22 +89,33 @@ local function createGUI()
     btnIcon.Parent = btn
     
     btn.MouseButton1Click:Connect(function()
-        if not currentTarget then return end
-        
-        currentState = not currentState
-        
-        local args = {
-            currentTarget.Point,
-            currentState
-        }
-        
-        repairEvent:FireServer(unpack(args))
-        
         if currentState then
-            btn.ImageColor3 = Color3.fromRGB(0, 255, 0)
-        else
+            currentState = false
             btn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+            stopAnimation()
+
+            if currentTarget then
+                repairEvent:FireServer(currentTarget.Point, false)
+            end
+
+            local closest = getClosestGeneratorPoint()
+            if closest then
+                btn.Visible = true
+                currentTarget = closest
+            else
+                btn.Visible = false
+                currentTarget = nil
+            end
+            return
         end
+
+        if not currentTarget then return end
+
+        currentState = true
+        btn.ImageColor3 = Color3.fromRGB(0, 255, 0)
+        repairEvent:FireServer(currentTarget.Point, true)
+        playAnimation()
+        btn.Visible = true
     end)
 end
 
@@ -70,28 +126,52 @@ local function checkAndRecreateGUI()
 end
 
 local function getFolderNames()
-    return {"Gens", "Generators", "new Generators","Generator"}
+    return {"Gens", "Generators", "new Generators", "newGenerators", "Generator"}
+end
+
+local function getGeneratorFolders()
+    local folders = {}
+    local map = Workspace:FindFirstChild("Map")
+    if not map then return folders end
+
+    for _, folderName in pairs(getFolderNames()) do
+        local folder = map:FindFirstChild(folderName)
+        if folder then
+            table.insert(folders, folder)
+        end
+    end
+
+    local resources = map:FindFirstChild("Resources") or map:FindFirstChild("resources")
+    if resources then
+        for _, folderName in pairs(getFolderNames()) do
+            local folder = resources:FindFirstChild(folderName)
+            if folder then
+                table.insert(folders, folder)
+            end
+        end
+        local genFolder = resources:FindFirstChild("Generators") or resources:FindFirstChild("generators")
+        if genFolder and not table.find(folders, genFolder) then
+            table.insert(folders, genFolder)
+        end
+    end
+
+    return folders
 end
 
 local function getAllGeneratorPoints()
     local points = {}
-    local map = Workspace:FindFirstChild("Map")
-    if not map then return points end
-    
-    local folderNames = getFolderNames()
-    for _, folderName in pairs(folderNames) do
-        local folder = map:FindFirstChild(folderName)
-        if folder then
-            for _, gen in pairs(folder:GetChildren()) do
-                if gen.Name:match("Generator") then
-                    for _, point in pairs(gen:GetChildren()) do
-                        if point.Name:match("GeneratorPoint") and point:IsA("BasePart") then
-                            table.insert(points, {
-                                Point = point,
-                                Generator = gen,
-                                Folder = folder
-                            })
-                        end
+    local folders = getGeneratorFolders()
+
+    for _, folder in pairs(folders) do
+        for _, gen in pairs(folder:GetChildren()) do
+            if gen.Name:match("Generator") then
+                for _, point in pairs(gen:GetChildren()) do
+                    if point.Name:match("GeneratorPoint") and point:IsA("BasePart") then
+                        table.insert(points, {
+                            Point = point,
+                            Generator = gen,
+                            Folder = folder
+                        })
                     end
                 end
             end
@@ -102,17 +182,12 @@ end
 
 local function getGeneratorCount()
     local count = 0
-    local map = Workspace:FindFirstChild("Map")
-    if not map then return count end
-    
-    local folderNames = getFolderNames()
-    for _, folderName in pairs(folderNames) do
-        local folder = map:FindFirstChild(folderName)
-        if folder then
-            for _, gen in pairs(folder:GetChildren()) do
-                if gen.Name:match("Generator") then
-                    count = count + 1
-                end
+    local folders = getGeneratorFolders()
+
+    for _, folder in pairs(folders) do
+        for _, gen in pairs(folder:GetChildren()) do
+            if gen.Name:match("Generator") then
+                count = count + 1
             end
         end
     end
@@ -152,6 +227,11 @@ local function updateButtonVisibility()
     
     if not btn then return end
     
+    if currentState then
+        btn.Visible = true
+        return
+    end
+
     local character = LocalPlayer.Character
     if not character then
         btn.Visible = false
@@ -169,51 +249,78 @@ local function updateButtonVisibility()
     end
 end
 
+local function allLampsEnabled(gen)
+    local lampNames = {"Lamp1", "Lamp2", "Lamp3"}
+    local found = 0
+    local enabled = 0
+
+    for _, lampName in ipairs(lampNames) do
+        local lamp = gen:FindFirstChild(lampName, true)
+        if lamp then
+            local pointLight = lamp:FindFirstChildOfClass("PointLight")
+            if pointLight then
+                found = found + 1
+                if pointLight.Enabled then
+                    enabled = enabled + 1
+                end
+            end
+        end
+    end
+
+    return found == 3 and enabled == 3
+end
+
 local function createHitBoxBillboards()
-    local map = Workspace:FindFirstChild("Map")
-    if not map then return end
-    
-    local folderNames = getFolderNames()
-    for _, folderName in pairs(folderNames) do
-        local folder = map:FindFirstChild(folderName)
-        if folder then
-            for _, gen in pairs(folder:GetChildren()) do
-                if gen.Name:match("Generator") then
-                    local hitbox = gen:FindFirstChild("HitBox")
-                    if hitbox and hitbox:IsA("BasePart") then
-                        local existing = hitbox:FindFirstChild("GeneratorBillboard")
+    local folders = getGeneratorFolders()
+
+    for _, folder in pairs(folders) do
+        for _, gen in pairs(folder:GetChildren()) do
+            if gen.Name:match("Generator") then
+                local hitbox = gen:FindFirstChild("HitBox")
+                if hitbox and hitbox:IsA("BasePart") then
+                    local existing = hitbox:FindFirstChild("GeneratorBillboard")
+
+                    local hasPoints = false
+                    for _, child in pairs(gen:GetChildren()) do
+                        if child.Name:match("GeneratorPoint") then
+                            hasPoints = true
+                            break
+                        end
+                    end
+
+                    if not hasPoints then
                         if existing then
                             existing:Destroy()
                         end
-                        
-                        local hasPoints = false
-                        for _, child in pairs(gen:GetChildren()) do
-                            if child.Name:match("GeneratorPoint") then
-                                hasPoints = true
-                                break
+                    else
+                        local color = Color3.fromRGB(0, 255, 0)
+                        if allLampsEnabled(gen) then
+                            color = Color3.fromRGB(255, 0, 0)
+                        end
+
+                        if existing then
+                            local label = existing:FindFirstChildOfClass("ImageLabel")
+                            if label then
+                                label.ImageColor3 = color
                             end
-                        end
-                        
-                        local billboard = Instance.new("BillboardGui")
-                        billboard.Name = "GeneratorBillboard"
-                        billboard.Adornee = hitbox
-                        billboard.Size = UDim2.new(0, 30, 0, 30)
-                        billboard.StudsOffset = Vector3.new(0, 2, 0)
-                        billboard.MaxDistance = 9999
-                        billboard.AlwaysOnTop = true
-                        billboard.Parent = hitbox
-                        
-                        local imageLabel = Instance.new("ImageLabel")
-                        imageLabel.Size = UDim2.new(1, 0, 1, 0)
-                        imageLabel.BackgroundTransparency = 1
-                        imageLabel.Image = "rbxassetid://116363952886564"
-                        imageLabel.ImageTransparency = 0.5
-                        if hasPoints then
-                            imageLabel.ImageColor3 = Color3.fromRGB(0, 255, 0)
                         else
-                            imageLabel.ImageColor3 = Color3.fromRGB(255, 0, 0)
+                            local billboard = Instance.new("BillboardGui")
+                            billboard.Name = "GeneratorBillboard"
+                            billboard.Adornee = hitbox
+                            billboard.Size = UDim2.new(0, 30, 0, 30)
+                            billboard.StudsOffset = Vector3.new(0, 2, 0)
+                            billboard.MaxDistance = 9999
+                            billboard.AlwaysOnTop = true
+                            billboard.Parent = hitbox
+
+                            local imageLabel = Instance.new("ImageLabel")
+                            imageLabel.Size = UDim2.new(1, 0, 1, 0)
+                            imageLabel.BackgroundTransparency = 1
+                            imageLabel.Image = "rbxassetid://116363952886564"
+                            imageLabel.ImageTransparency = 0.5
+                            imageLabel.ImageColor3 = color
+                            imageLabel.Parent = billboard
                         end
-                        imageLabel.Parent = billboard
                     end
                 end
             end
@@ -235,6 +342,15 @@ local function checkGeneratorChanges()
     end
 end
 
+LocalPlayer.CharacterAdded:Connect(function()
+    animator = nil
+    animTrack = nil
+    if currentState then
+        task.wait(1)
+        playAnimation()
+    end
+end)
+
 createGUI()
 lastGenCount = getGeneratorCount()
 
@@ -242,6 +358,10 @@ RunService.Heartbeat:Connect(function()
     updateButtonVisibility()
     createHitBoxBillboards()
     checkGeneratorChanges()
+
+    if currentState and (not animTrack or not animTrack.IsPlaying) then
+        playAnimation()
+    end
 end)
 
 task.spawn(function()
