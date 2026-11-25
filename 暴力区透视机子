@@ -6,7 +6,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local repairEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Generator"):WaitForChild("RepairEvent")
 
-local ANIMATION_ID = "rbxassetid://127083088972311"
+local ANIMATION_IDS = {
+    "rbxassetid://83160743983246",
+    "rbxassetid://92960319113695",
+}
 
 local gui = nil
 local btn = nil
@@ -17,6 +20,7 @@ local lastGenCount = 0
 
 local animator = nil
 local animTrack = nil
+local lockedAnimationId = nil
 
 local function stopAnimation()
     if animTrack then
@@ -43,8 +47,12 @@ local function playAnimation()
 
     if animTrack and animTrack.IsPlaying then return end
 
+    if not lockedAnimationId then
+        lockedAnimationId = ANIMATION_IDS[math.random(1, #ANIMATION_IDS)]
+    end
+
     local animation = Instance.new("Animation")
-    animation.AnimationId = ANIMATION_ID
+    animation.AnimationId = lockedAnimationId
 
     local ok, track = pcall(function()
         return animator:LoadAnimation(animation)
@@ -91,6 +99,7 @@ local function createGUI()
     btn.MouseButton1Click:Connect(function()
         if currentState then
             currentState = false
+            lockedAnimationId = nil
             btn.ImageColor3 = Color3.fromRGB(255, 255, 255)
             stopAnimation()
 
@@ -112,6 +121,7 @@ local function createGUI()
         if not currentTarget then return end
 
         currentState = true
+        lockedAnimationId = ANIMATION_IDS[math.random(1, #ANIMATION_IDS)]
         btn.ImageColor3 = Color3.fromRGB(0, 255, 0)
         repairEvent:FireServer(currentTarget.Point, true)
         playAnimation()
